@@ -9,7 +9,10 @@ public class PaymentResponse {
     private LocalDate paymentDate;
     private String paymentMethod;
     private String status;
+
     private Long bookingId;
+    private LocalDate bookingDate;
+    private String bookingStatus;
 
     public Long getPaymentId() {
         return paymentId;
@@ -57,5 +60,21 @@ public class PaymentResponse {
 
     public void setBookingId(Long bookingId) {
         this.bookingId = bookingId;
+    }
+
+    public LocalDate getBookingDate() {
+        return bookingDate;
+    }
+
+    public void setBookingDate(LocalDate bookingDate) {
+        this.bookingDate = bookingDate;
+    }
+
+    public String getBookingStatus() {
+        return bookingStatus;
+    }
+
+    public void setBookingStatus(String bookingStatus) {
+        this.bookingStatus = bookingStatus;
     }
 }

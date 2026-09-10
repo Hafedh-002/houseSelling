@@ -10,7 +10,9 @@ public class DocumentResponse {
     private String documentNumber;
     private LocalDate issueDate;
     private String status;
+
     private Long houseId;
+    private String houseTitle;
 
     public Long getDocumentId() {
         return documentId;
@@ -66,5 +68,13 @@ public class DocumentResponse {
 
     public void setHouseId(Long houseId) {
         this.houseId = houseId;
+    }
+
+    public String getHouseTitle() {
+        return houseTitle;
+    }
+
+    public void setHouseTitle(String houseTitle) {
+        this.houseTitle = houseTitle;
     }
 }

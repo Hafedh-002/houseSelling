@@ -110,8 +110,13 @@ public class DocumentService {
         response.setStatus(document.getStatus());
 
         if (document.getHouse() != null) {
+
             response.setHouseId(
                     document.getHouse().getHouseId()
+            );
+
+            response.setHouseTitle(
+                    document.getHouse().getTitle()
             );
         }
 

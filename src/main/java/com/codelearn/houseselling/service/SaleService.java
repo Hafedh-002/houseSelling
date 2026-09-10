@@ -77,7 +77,8 @@ public class SaleService {
             Long id,
             SaleRequest request) {
 
-        Sale existingSale = saleRepository.findById(id).orElse(null);
+        Sale existingSale =
+                saleRepository.findById(id).orElse(null);
 
         if (existingSale == null) {
             return null;
@@ -118,14 +119,24 @@ public class SaleService {
         response.setStatus(sale.getStatus());
 
         if (sale.getHouse() != null) {
+
             response.setHouseId(
                     sale.getHouse().getHouseId()
+            );
+
+            response.setHouseTitle(
+                    sale.getHouse().getTitle()
             );
         }
 
         if (sale.getCustomer() != null) {
+
             response.setCustomerId(
                     sale.getCustomer().getCustomerId()
+            );
+
+            response.setCustomerName(
+                    sale.getCustomer().getName()
             );
         }
 

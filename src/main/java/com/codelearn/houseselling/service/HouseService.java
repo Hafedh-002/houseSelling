@@ -19,6 +19,7 @@ public class HouseService {
     public HouseService(
             HouseRepository houseRepository,
             SellerRepository sellerRepository) {
+
         this.houseRepository = houseRepository;
         this.sellerRepository = sellerRepository;
     }
@@ -64,7 +65,9 @@ public class HouseService {
         return convertToResponse(house);
     }
 
-    public HouseResponse updateHouse(Long id, HouseRequest request) {
+    public HouseResponse updateHouse(
+            Long id,
+            HouseRequest request) {
 
         House existingHouse = houseRepository.findById(id).orElse(null);
 
@@ -107,7 +110,13 @@ public class HouseService {
         response.setBathrooms(house.getBathrooms());
 
         if (house.getSeller() != null) {
-            response.setSellerId(house.getSeller().getSellerId());
+            response.setSellerId(
+                    house.getSeller().getSellerId()
+            );
+
+            response.setSellerName(
+                    house.getSeller().getName()
+            );
         }
 
         return response;

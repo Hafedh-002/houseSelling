@@ -10,6 +10,7 @@ public class HouseResponse {
     private Integer bedrooms;
     private Integer bathrooms;
     private Long sellerId;
+    private String sellerName;
 
     public Long getHouseId() {
         return houseId;
@@ -73,5 +74,13 @@ public class HouseResponse {
 
     public void setSellerId(Long sellerId) {
         this.sellerId = sellerId;
+    }
+
+    public String getSellerName() {
+        return sellerName;
+    }
+
+    public void setSellerName(String sellerName) {
+        this.sellerName = sellerName;
     }
 }

@@ -72,7 +72,9 @@ public class BookingService {
         return convertToResponse(booking);
     }
 
-    public BookingResponse updateBooking(Long id, BookingRequest request) {
+    public BookingResponse updateBooking(
+            Long id,
+            BookingRequest request) {
 
         Booking existingBooking =
                 bookingRepository.findById(id).orElse(null);
@@ -115,14 +117,24 @@ public class BookingService {
         response.setStatus(booking.getStatus());
 
         if (booking.getCustomer() != null) {
+
             response.setCustomerId(
                     booking.getCustomer().getCustomerId()
+            );
+
+            response.setCustomerName(
+                    booking.getCustomer().getName()
             );
         }
 
         if (booking.getHouse() != null) {
+
             response.setHouseId(
                     booking.getHouse().getHouseId()
+            );
+
+            response.setHouseTitle(
+                    booking.getHouse().getTitle()
             );
         }
 

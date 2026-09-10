@@ -8,8 +8,12 @@ public class SaleResponse {
     private Double salePrice;
     private LocalDate saleDate;
     private String status;
+
     private Long houseId;
+    private String houseTitle;
+
     private Long customerId;
+    private String customerName;
 
     public Long getSaleId() {
         return saleId;
@@ -51,11 +55,27 @@ public class SaleResponse {
         this.houseId = houseId;
     }
 
+    public String getHouseTitle() {
+        return houseTitle;
+    }
+
+    public void setHouseTitle(String houseTitle) {
+        this.houseTitle = houseTitle;
+    }
+
     public Long getCustomerId() {
         return customerId;
     }
 
     public void setCustomerId(Long customerId) {
         this.customerId = customerId;
+    }
+
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
     }
 }

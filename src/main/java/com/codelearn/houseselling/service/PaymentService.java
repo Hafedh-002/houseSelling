@@ -106,8 +106,17 @@ public class PaymentService {
         response.setStatus(payment.getStatus());
 
         if (payment.getBooking() != null) {
+
             response.setBookingId(
                     payment.getBooking().getBookingId()
+            );
+
+            response.setBookingDate(
+                    payment.getBooking().getBookingDate()
+            );
+
+            response.setBookingStatus(
+                    payment.getBooking().getStatus()
             );
         }
 
