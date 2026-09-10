@@ -1,6 +1,7 @@
+package com.codelearn.houseselling.service;
 
-        package com.codelearn.houseselling.service;
-
+import com.codelearn.houseselling.dto.PaymentRequest;
+import com.codelearn.houseselling.dto.PaymentResponse;
 import com.codelearn.houseselling.entity.Booking;
 import com.codelearn.houseselling.entity.Payment;
 import com.codelearn.houseselling.repository.BookingRepository;
@@ -23,68 +24,93 @@ public class PaymentService {
         this.bookingRepository = bookingRepository;
     }
 
-    public Payment createPayment(Payment payment) {
+    public PaymentResponse createPayment(PaymentRequest request) {
 
-        if (payment.getBooking() == null ||
-                payment.getBooking().getBookingId() == null) {
-
-            throw new IllegalArgumentException("Booking is required");
-        }
-
-        Long bookingId = payment.getBooking().getBookingId();
-
-        Booking booking = bookingRepository.findById(bookingId)
+        Booking booking = bookingRepository.findById(request.getBookingId())
                 .orElseThrow(() ->
                         new IllegalArgumentException(
-                                "Booking not found with id: " + bookingId
-                        ));
+                                "Booking not found with id: " + request.getBookingId()));
 
+        Payment payment = new Payment();
+
+        payment.setAmount(request.getAmount());
+        payment.setPaymentDate(request.getPaymentDate());
+        payment.setPaymentMethod(request.getPaymentMethod());
+        payment.setStatus(request.getStatus());
         payment.setBooking(booking);
 
-        return paymentRepository.save(payment);
+        Payment savedPayment = paymentRepository.save(payment);
+
+        return convertToResponse(savedPayment);
     }
 
-    public List<Payment> getAllPayments() {
-        return paymentRepository.findAll();
+    public List<PaymentResponse> getAllPayments() {
+
+        return paymentRepository.findAll()
+                .stream()
+                .map(this::convertToResponse)
+                .toList();
     }
 
-    public Payment getPaymentById(Long id) {
-        return paymentRepository.findById(id).orElse(null);
+    public PaymentResponse getPaymentById(Long id) {
+
+        Payment payment = paymentRepository.findById(id).orElse(null);
+
+        if (payment == null) {
+            return null;
+        }
+
+        return convertToResponse(payment);
     }
 
-    public Payment updatePayment(Long id, Payment payment) {
+    public PaymentResponse updatePayment(
+            Long id,
+            PaymentRequest request) {
 
-        Payment existingPayment = paymentRepository.findById(id)
-                .orElse(null);
+        Payment existingPayment =
+                paymentRepository.findById(id).orElse(null);
 
         if (existingPayment == null) {
             return null;
         }
 
-        if (payment.getBooking() == null ||
-                payment.getBooking().getBookingId() == null) {
-
-            throw new IllegalArgumentException("Booking is required");
-        }
-
-        Long bookingId = payment.getBooking().getBookingId();
-
-        Booking booking = bookingRepository.findById(bookingId)
+        Booking booking = bookingRepository.findById(request.getBookingId())
                 .orElseThrow(() ->
                         new IllegalArgumentException(
-                                "Booking not found with id: " + bookingId
-                        ));
+                                "Booking not found with id: " + request.getBookingId()));
 
-        existingPayment.setAmount(payment.getAmount());
-        existingPayment.setPaymentDate(payment.getPaymentDate());
-        existingPayment.setPaymentMethod(payment.getPaymentMethod());
-        existingPayment.setStatus(payment.getStatus());
+        existingPayment.setAmount(request.getAmount());
+        existingPayment.setPaymentDate(request.getPaymentDate());
+        existingPayment.setPaymentMethod(request.getPaymentMethod());
+        existingPayment.setStatus(request.getStatus());
         existingPayment.setBooking(booking);
 
-        return paymentRepository.save(existingPayment);
+        Payment updatedPayment =
+                paymentRepository.save(existingPayment);
+
+        return convertToResponse(updatedPayment);
     }
 
     public void deletePayment(Long id) {
         paymentRepository.deleteById(id);
+    }
+
+    private PaymentResponse convertToResponse(Payment payment) {
+
+        PaymentResponse response = new PaymentResponse();
+
+        response.setPaymentId(payment.getPaymentId());
+        response.setAmount(payment.getAmount());
+        response.setPaymentDate(payment.getPaymentDate());
+        response.setPaymentMethod(payment.getPaymentMethod());
+        response.setStatus(payment.getStatus());
+
+        if (payment.getBooking() != null) {
+            response.setBookingId(
+                    payment.getBooking().getBookingId()
+            );
+        }
+
+        return response;
     }
 }

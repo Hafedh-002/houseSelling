@@ -1,8 +1,11 @@
 package com.codelearn.houseselling.controller;
 
-import com.codelearn.houseselling.entity.House;
+import com.codelearn.houseselling.dto.HouseRequest;
+import com.codelearn.houseselling.dto.HouseResponse;
 import com.codelearn.houseselling.service.HouseService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,31 +21,58 @@ public class HouseController {
     }
 
     @PostMapping
-    public House createHouse(@Valid @RequestBody House house) {
-        return houseService.createHouse(house);
+    public ResponseEntity<HouseResponse> createHouse(
+            @Valid @RequestBody HouseRequest request) {
+
+        HouseResponse response = houseService.createHouse(request);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
     }
 
     @GetMapping
-    public List<House> getAllHouses() {
-        return houseService.getAllHouses();
+    public ResponseEntity<List<HouseResponse>> getAllHouses() {
+
+        return ResponseEntity.ok(
+                houseService.getAllHouses()
+        );
     }
 
     @GetMapping("/{id}")
-    public House getHouseById(@PathVariable Long id) {
-        return houseService.getHouseById(id);
+    public ResponseEntity<HouseResponse> getHouseById(
+            @PathVariable Long id) {
+
+        HouseResponse response = houseService.getHouseById(id);
+
+        if (response == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
-    public House updateHouse(
+    public ResponseEntity<HouseResponse> updateHouse(
             @PathVariable Long id,
-            @Valid @RequestBody House house) {
+            @Valid @RequestBody HouseRequest request) {
 
-        return houseService.updateHouse(id, house);
+        HouseResponse response =
+                houseService.updateHouse(id, request);
+
+        if (response == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
-    public String deleteHouse(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteHouse(
+            @PathVariable Long id) {
+
         houseService.deleteHouse(id);
-        return "House deleted successfully";
+
+        return ResponseEntity.noContent().build();
     }
 }

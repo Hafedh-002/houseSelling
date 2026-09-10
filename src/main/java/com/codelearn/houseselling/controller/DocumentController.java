@@ -1,8 +1,11 @@
 package com.codelearn.houseselling.controller;
 
-import com.codelearn.houseselling.entity.Document;
+import com.codelearn.houseselling.dto.DocumentRequest;
+import com.codelearn.houseselling.dto.DocumentResponse;
 import com.codelearn.houseselling.service.DocumentService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,33 +21,60 @@ public class DocumentController {
     }
 
     @PostMapping
-    public Document createDocument(
-            @Valid @RequestBody Document document) {
+    public ResponseEntity<DocumentResponse> createDocument(
+            @Valid @RequestBody DocumentRequest request) {
 
-        return documentService.createDocument(document);
+        DocumentResponse response =
+                documentService.createDocument(request);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
     }
 
     @GetMapping
-    public List<Document> getAllDocuments() {
-        return documentService.getAllDocuments();
+    public ResponseEntity<List<DocumentResponse>> getAllDocuments() {
+
+        return ResponseEntity.ok(
+                documentService.getAllDocuments()
+        );
     }
 
     @GetMapping("/{id}")
-    public Document getDocumentById(@PathVariable Long id) {
-        return documentService.getDocumentById(id);
+    public ResponseEntity<DocumentResponse> getDocumentById(
+            @PathVariable Long id) {
+
+        DocumentResponse response =
+                documentService.getDocumentById(id);
+
+        if (response == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
-    public Document updateDocument(
+    public ResponseEntity<DocumentResponse> updateDocument(
             @PathVariable Long id,
-            @Valid @RequestBody Document document) {
+            @Valid @RequestBody DocumentRequest request) {
 
-        return documentService.updateDocument(id, document);
+        DocumentResponse response =
+                documentService.updateDocument(id, request);
+
+        if (response == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
-    public String deleteDocument(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteDocument(
+            @PathVariable Long id) {
+
         documentService.deleteDocument(id);
-        return "Document deleted successfully";
+
+        return ResponseEntity.noContent().build();
     }
 }

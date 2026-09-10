@@ -1,8 +1,11 @@
 package com.codelearn.houseselling.controller;
 
-import com.codelearn.houseselling.entity.Sale;
+import com.codelearn.houseselling.dto.SaleRequest;
+import com.codelearn.houseselling.dto.SaleResponse;
 import com.codelearn.houseselling.service.SaleService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,31 +21,60 @@ public class SaleController {
     }
 
     @PostMapping
-    public Sale createSale(@Valid @RequestBody Sale sale) {
-        return saleService.createSale(sale);
+    public ResponseEntity<SaleResponse> createSale(
+            @Valid @RequestBody SaleRequest request) {
+
+        SaleResponse response =
+                saleService.createSale(request);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
     }
 
     @GetMapping
-    public List<Sale> getAllSales() {
-        return saleService.getAllSales();
+    public ResponseEntity<List<SaleResponse>> getAllSales() {
+
+        return ResponseEntity.ok(
+                saleService.getAllSales()
+        );
     }
 
     @GetMapping("/{id}")
-    public Sale getSaleById(@PathVariable Long id) {
-        return saleService.getSaleById(id);
+    public ResponseEntity<SaleResponse> getSaleById(
+            @PathVariable Long id) {
+
+        SaleResponse response =
+                saleService.getSaleById(id);
+
+        if (response == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
-    public Sale updateSale(
+    public ResponseEntity<SaleResponse> updateSale(
             @PathVariable Long id,
-            @Valid @RequestBody Sale sale) {
+            @Valid @RequestBody SaleRequest request) {
 
-        return saleService.updateSale(id, sale);
+        SaleResponse response =
+                saleService.updateSale(id, request);
+
+        if (response == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
-    public String deleteSale(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteSale(
+            @PathVariable Long id) {
+
         saleService.deleteSale(id);
-        return "Sale deleted successfully";
+
+        return ResponseEntity.noContent().build();
     }
 }

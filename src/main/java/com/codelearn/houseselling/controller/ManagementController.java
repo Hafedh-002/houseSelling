@@ -1,8 +1,11 @@
 package com.codelearn.houseselling.controller;
 
-import com.codelearn.houseselling.entity.Management;
+import com.codelearn.houseselling.dto.ManagementRequest;
+import com.codelearn.houseselling.dto.ManagementResponse;
 import com.codelearn.houseselling.service.ManagementService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,33 +21,60 @@ public class ManagementController {
     }
 
     @PostMapping
-    public Management createManagement(
-            @Valid @RequestBody Management management) {
+    public ResponseEntity<ManagementResponse> createManagement(
+            @Valid @RequestBody ManagementRequest request) {
 
-        return managementService.createManagement(management);
+        ManagementResponse response =
+                managementService.createManagement(request);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
     }
 
     @GetMapping
-    public List<Management> getAllManagement() {
-        return managementService.getAllManagement();
+    public ResponseEntity<List<ManagementResponse>> getAllManagement() {
+
+        return ResponseEntity.ok(
+                managementService.getAllManagement()
+        );
     }
 
     @GetMapping("/{id}")
-    public Management getManagementById(@PathVariable Long id) {
-        return managementService.getManagementById(id);
+    public ResponseEntity<ManagementResponse> getManagementById(
+            @PathVariable Long id) {
+
+        ManagementResponse response =
+                managementService.getManagementById(id);
+
+        if (response == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
-    public Management updateManagement(
+    public ResponseEntity<ManagementResponse> updateManagement(
             @PathVariable Long id,
-            @Valid @RequestBody Management management) {
+            @Valid @RequestBody ManagementRequest request) {
 
-        return managementService.updateManagement(id, management);
+        ManagementResponse response =
+                managementService.updateManagement(id, request);
+
+        if (response == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
-    public String deleteManagement(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteManagement(
+            @PathVariable Long id) {
+
         managementService.deleteManagement(id);
-        return "Management deleted successfully";
+
+        return ResponseEntity.noContent().build();
     }
 }

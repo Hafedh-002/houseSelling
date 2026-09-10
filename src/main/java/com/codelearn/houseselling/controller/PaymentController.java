@@ -1,8 +1,11 @@
 package com.codelearn.houseselling.controller;
 
-import com.codelearn.houseselling.entity.Payment;
+import com.codelearn.houseselling.dto.PaymentRequest;
+import com.codelearn.houseselling.dto.PaymentResponse;
 import com.codelearn.houseselling.service.PaymentService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,31 +21,60 @@ public class PaymentController {
     }
 
     @PostMapping
-    public Payment createPayment(@Valid @RequestBody Payment payment) {
-        return paymentService.createPayment(payment);
+    public ResponseEntity<PaymentResponse> createPayment(
+            @Valid @RequestBody PaymentRequest request) {
+
+        PaymentResponse response =
+                paymentService.createPayment(request);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
     }
 
     @GetMapping
-    public List<Payment> getAllPayments() {
-        return paymentService.getAllPayments();
+    public ResponseEntity<List<PaymentResponse>> getAllPayments() {
+
+        return ResponseEntity.ok(
+                paymentService.getAllPayments()
+        );
     }
 
     @GetMapping("/{id}")
-    public Payment getPaymentById(@PathVariable Long id) {
-        return paymentService.getPaymentById(id);
+    public ResponseEntity<PaymentResponse> getPaymentById(
+            @PathVariable Long id) {
+
+        PaymentResponse response =
+                paymentService.getPaymentById(id);
+
+        if (response == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
-    public Payment updatePayment(
+    public ResponseEntity<PaymentResponse> updatePayment(
             @PathVariable Long id,
-            @Valid @RequestBody Payment payment) {
+            @Valid @RequestBody PaymentRequest request) {
 
-        return paymentService.updatePayment(id, payment);
+        PaymentResponse response =
+                paymentService.updatePayment(id, request);
+
+        if (response == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
-    public String deletePayment(@PathVariable Long id) {
+    public ResponseEntity<Void> deletePayment(
+            @PathVariable Long id) {
+
         paymentService.deletePayment(id);
-        return "Payment deleted successfully";
+
+        return ResponseEntity.noContent().build();
     }
 }

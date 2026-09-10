@@ -1,5 +1,7 @@
 package com.codelearn.houseselling.service;
 
+import com.codelearn.houseselling.dto.CustomerRequest;
+import com.codelearn.houseselling.dto.CustomerResponse;
 import com.codelearn.houseselling.entity.Customer;
 import com.codelearn.houseselling.repository.CustomerRepository;
 import org.springframework.stereotype.Service;
@@ -15,41 +17,76 @@ public class CustomerService {
         this.customerRepository = customerRepository;
     }
 
-    // POST - Create customer
-    public Customer createCustomer(Customer customer) {
-        return customerRepository.save(customer);
+    public CustomerResponse createCustomer(CustomerRequest request) {
+
+        Customer customer = new Customer();
+
+        customer.setName(request.getName());
+        customer.setEmail(request.getEmail());
+        customer.setPhone(request.getPhone());
+        customer.setAddress(request.getAddress());
+
+        Customer savedCustomer = customerRepository.save(customer);
+
+        return convertToResponse(savedCustomer);
     }
 
-    // GET - Get all customers
-    public List<Customer> getAllCustomers() {
-        return customerRepository.findAll();
+    public List<CustomerResponse> getAllCustomers() {
+
+        return customerRepository.findAll()
+                .stream()
+                .map(this::convertToResponse)
+                .toList();
     }
 
-    // GET - Get one customer by ID
-    public Customer getCustomerById(Long id) {
-        return customerRepository.findById(id).orElse(null);
+    public CustomerResponse getCustomerById(Long id) {
+
+        Customer customer = customerRepository.findById(id)
+                .orElse(null);
+
+        if (customer == null) {
+            return null;
+        }
+
+        return convertToResponse(customer);
     }
 
-    // PUT - Update customer
-    public Customer updateCustomer(Long id, Customer customer) {
+    public CustomerResponse updateCustomer(
+            Long id,
+            CustomerRequest request) {
 
-        Customer existingCustomer =
-                customerRepository.findById(id).orElse(null);
+        Customer existingCustomer = customerRepository.findById(id)
+                .orElse(null);
 
         if (existingCustomer == null) {
             return null;
         }
 
-        existingCustomer.setName(customer.getName());
-        existingCustomer.setEmail(customer.getEmail());
-        existingCustomer.setPhone(customer.getPhone());
-        existingCustomer.setAddress(customer.getAddress());
+        existingCustomer.setName(request.getName());
+        existingCustomer.setEmail(request.getEmail());
+        existingCustomer.setPhone(request.getPhone());
+        existingCustomer.setAddress(request.getAddress());
 
-        return customerRepository.save(existingCustomer);
+        Customer updatedCustomer =
+                customerRepository.save(existingCustomer);
+
+        return convertToResponse(updatedCustomer);
     }
 
-    // DELETE - Delete customer
     public void deleteCustomer(Long id) {
         customerRepository.deleteById(id);
+    }
+
+    private CustomerResponse convertToResponse(Customer customer) {
+
+        CustomerResponse response = new CustomerResponse();
+
+        response.setCustomerId(customer.getCustomerId());
+        response.setName(customer.getName());
+        response.setEmail(customer.getEmail());
+        response.setPhone(customer.getPhone());
+        response.setAddress(customer.getAddress());
+
+        return response;
     }
 }

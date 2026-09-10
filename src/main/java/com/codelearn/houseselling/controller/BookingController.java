@@ -1,8 +1,11 @@
 package com.codelearn.houseselling.controller;
 
-import com.codelearn.houseselling.entity.Booking;
+import com.codelearn.houseselling.dto.BookingRequest;
+import com.codelearn.houseselling.dto.BookingResponse;
 import com.codelearn.houseselling.service.BookingService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,31 +21,60 @@ public class BookingController {
     }
 
     @PostMapping
-    public Booking createBooking(@Valid @RequestBody Booking booking) {
-        return bookingService.createBooking(booking);
+    public ResponseEntity<BookingResponse> createBooking(
+            @Valid @RequestBody BookingRequest request) {
+
+        BookingResponse response =
+                bookingService.createBooking(request);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
     }
 
     @GetMapping
-    public List<Booking> getAllBookings() {
-        return bookingService.getAllBookings();
+    public ResponseEntity<List<BookingResponse>> getAllBookings() {
+
+        return ResponseEntity.ok(
+                bookingService.getAllBookings()
+        );
     }
 
     @GetMapping("/{id}")
-    public Booking getBookingById(@PathVariable Long id) {
-        return bookingService.getBookingById(id);
+    public ResponseEntity<BookingResponse> getBookingById(
+            @PathVariable Long id) {
+
+        BookingResponse response =
+                bookingService.getBookingById(id);
+
+        if (response == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
-    public Booking updateBooking(
+    public ResponseEntity<BookingResponse> updateBooking(
             @PathVariable Long id,
-            @Valid @RequestBody Booking booking) {
+            @Valid @RequestBody BookingRequest request) {
 
-        return bookingService.updateBooking(id, booking);
+        BookingResponse response =
+                bookingService.updateBooking(id, request);
+
+        if (response == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
-    public String deleteBooking(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteBooking(
+            @PathVariable Long id) {
+
         bookingService.deleteBooking(id);
-        return "Booking deleted successfully";
+
+        return ResponseEntity.noContent().build();
     }
 }

@@ -1,6 +1,7 @@
+package com.codelearn.houseselling.service;
 
-        package com.codelearn.houseselling.service;
-
+import com.codelearn.houseselling.dto.BookingRequest;
+import com.codelearn.houseselling.dto.BookingResponse;
 import com.codelearn.houseselling.entity.Booking;
 import com.codelearn.houseselling.entity.Customer;
 import com.codelearn.houseselling.entity.House;
@@ -28,95 +29,103 @@ public class BookingService {
         this.houseRepository = houseRepository;
     }
 
-    public Booking createBooking(Booking booking) {
+    public BookingResponse createBooking(BookingRequest request) {
 
-        if (booking.getCustomer() == null ||
-                booking.getCustomer().getCustomerId() == null) {
-
-            throw new IllegalArgumentException("Customer is required");
-        }
-
-        if (booking.getHouse() == null ||
-                booking.getHouse().getHouseId() == null) {
-
-            throw new IllegalArgumentException("House is required");
-        }
-
-        Long customerId = booking.getCustomer().getCustomerId();
-        Long houseId = booking.getHouse().getHouseId();
-
-        Customer customer = customerRepository.findById(customerId)
+        Customer customer = customerRepository.findById(request.getCustomerId())
                 .orElseThrow(() ->
                         new IllegalArgumentException(
-                                "Customer not found with id: " + customerId
-                        ));
+                                "Customer not found with id: " + request.getCustomerId()));
 
-        House house = houseRepository.findById(houseId)
+        House house = houseRepository.findById(request.getHouseId())
                 .orElseThrow(() ->
                         new IllegalArgumentException(
-                                "House not found with id: " + houseId
-                        ));
+                                "House not found with id: " + request.getHouseId()));
 
+        Booking booking = new Booking();
+
+        booking.setBookingDate(request.getBookingDate());
+        booking.setStatus(request.getStatus());
         booking.setCustomer(customer);
         booking.setHouse(house);
 
-        return bookingRepository.save(booking);
+        Booking savedBooking = bookingRepository.save(booking);
+
+        return convertToResponse(savedBooking);
     }
 
-    public List<Booking> getAllBookings() {
-        return bookingRepository.findAll();
+    public List<BookingResponse> getAllBookings() {
+
+        return bookingRepository.findAll()
+                .stream()
+                .map(this::convertToResponse)
+                .toList();
     }
 
-    public Booking getBookingById(Long id) {
-        return bookingRepository.findById(id).orElse(null);
+    public BookingResponse getBookingById(Long id) {
+
+        Booking booking = bookingRepository.findById(id).orElse(null);
+
+        if (booking == null) {
+            return null;
+        }
+
+        return convertToResponse(booking);
     }
 
-    public Booking updateBooking(Long id, Booking booking) {
+    public BookingResponse updateBooking(Long id, BookingRequest request) {
 
-        Booking existingBooking = bookingRepository.findById(id)
-                .orElse(null);
+        Booking existingBooking =
+                bookingRepository.findById(id).orElse(null);
 
         if (existingBooking == null) {
             return null;
         }
 
-        if (booking.getCustomer() == null ||
-                booking.getCustomer().getCustomerId() == null) {
-
-            throw new IllegalArgumentException("Customer is required");
-        }
-
-        if (booking.getHouse() == null ||
-                booking.getHouse().getHouseId() == null) {
-
-            throw new IllegalArgumentException("House is required");
-        }
-
-        Long customerId = booking.getCustomer().getCustomerId();
-        Long houseId = booking.getHouse().getHouseId();
-
-        Customer customer = customerRepository.findById(customerId)
+        Customer customer = customerRepository.findById(request.getCustomerId())
                 .orElseThrow(() ->
                         new IllegalArgumentException(
-                                "Customer not found with id: " + customerId
-                        ));
+                                "Customer not found with id: " + request.getCustomerId()));
 
-        House house = houseRepository.findById(houseId)
+        House house = houseRepository.findById(request.getHouseId())
                 .orElseThrow(() ->
                         new IllegalArgumentException(
-                                "House not found with id: " + houseId
-                        ));
+                                "House not found with id: " + request.getHouseId()));
 
-        existingBooking.setBookingDate(booking.getBookingDate());
-        existingBooking.setStatus(booking.getStatus());
+        existingBooking.setBookingDate(request.getBookingDate());
+        existingBooking.setStatus(request.getStatus());
         existingBooking.setCustomer(customer);
         existingBooking.setHouse(house);
 
-        return bookingRepository.save(existingBooking);
+        Booking updatedBooking =
+                bookingRepository.save(existingBooking);
+
+        return convertToResponse(updatedBooking);
     }
 
     public void deleteBooking(Long id) {
         bookingRepository.deleteById(id);
     }
-}
 
+    private BookingResponse convertToResponse(Booking booking) {
+
+        BookingResponse response = new BookingResponse();
+
+        response.setBookingId(booking.getBookingId());
+        response.setBookingDate(booking.getBookingDate());
+        response.setStatus(booking.getStatus());
+
+        if (booking.getCustomer() != null) {
+            response.setCustomerId(
+                    booking.getCustomer().getCustomerId()
+            );
+        }
+
+        if (booking.getHouse() != null) {
+            response.setHouseId(
+                    booking.getHouse().getHouseId()
+            );
+        }
+
+        return response;
+    }
+}

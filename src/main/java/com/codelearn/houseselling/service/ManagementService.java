@@ -1,5 +1,7 @@
 package com.codelearn.houseselling.service;
 
+import com.codelearn.houseselling.dto.ManagementRequest;
+import com.codelearn.houseselling.dto.ManagementResponse;
 import com.codelearn.houseselling.entity.Management;
 import com.codelearn.houseselling.repository.ManagementRepository;
 import org.springframework.stereotype.Service;
@@ -15,25 +17,45 @@ public class ManagementService {
         this.managementRepository = managementRepository;
     }
 
-    // Create management
-    public Management createManagement(Management management) {
-        return managementRepository.save(management);
+    public ManagementResponse createManagement(
+            ManagementRequest request) {
+
+        Management management = new Management();
+
+        management.setName(request.getName());
+        management.setEmail(request.getEmail());
+        management.setPhone(request.getPhone());
+        management.setRole(request.getRole());
+
+        Management savedManagement =
+                managementRepository.save(management);
+
+        return convertToResponse(savedManagement);
     }
 
-    // Get all management records
-    public List<Management> getAllManagement() {
-        return managementRepository.findAll();
+    public List<ManagementResponse> getAllManagement() {
+
+        return managementRepository.findAll()
+                .stream()
+                .map(this::convertToResponse)
+                .toList();
     }
 
-    // Get one management record
-    public Management getManagementById(Long id) {
-        return managementRepository.findById(id).orElse(null);
+    public ManagementResponse getManagementById(Long id) {
+
+        Management management =
+                managementRepository.findById(id).orElse(null);
+
+        if (management == null) {
+            return null;
+        }
+
+        return convertToResponse(management);
     }
 
-    // Update management
-    public Management updateManagement(
+    public ManagementResponse updateManagement(
             Long id,
-            Management management) {
+            ManagementRequest request) {
 
         Management existingManagement =
                 managementRepository.findById(id).orElse(null);
@@ -42,16 +64,32 @@ public class ManagementService {
             return null;
         }
 
-        existingManagement.setName(management.getName());
-        existingManagement.setEmail(management.getEmail());
-        existingManagement.setPhone(management.getPhone());
-        existingManagement.setRole(management.getRole());
+        existingManagement.setName(request.getName());
+        existingManagement.setEmail(request.getEmail());
+        existingManagement.setPhone(request.getPhone());
+        existingManagement.setRole(request.getRole());
 
-        return managementRepository.save(existingManagement);
+        Management updatedManagement =
+                managementRepository.save(existingManagement);
+
+        return convertToResponse(updatedManagement);
     }
 
-    // Delete management
     public void deleteManagement(Long id) {
         managementRepository.deleteById(id);
+    }
+
+    private ManagementResponse convertToResponse(
+            Management management) {
+
+        ManagementResponse response = new ManagementResponse();
+
+        response.setManagementId(management.getManagementId());
+        response.setName(management.getName());
+        response.setEmail(management.getEmail());
+        response.setPhone(management.getPhone());
+        response.setRole(management.getRole());
+
+        return response;
     }
 }

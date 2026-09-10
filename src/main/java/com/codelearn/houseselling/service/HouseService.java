@@ -1,6 +1,7 @@
+package com.codelearn.houseselling.service;
 
-        package com.codelearn.houseselling.service;
-
+import com.codelearn.houseselling.dto.HouseRequest;
+import com.codelearn.houseselling.dto.HouseResponse;
 import com.codelearn.houseselling.entity.House;
 import com.codelearn.houseselling.entity.Seller;
 import com.codelearn.houseselling.repository.HouseRepository;
@@ -18,75 +19,97 @@ public class HouseService {
     public HouseService(
             HouseRepository houseRepository,
             SellerRepository sellerRepository) {
-
         this.houseRepository = houseRepository;
         this.sellerRepository = sellerRepository;
     }
 
-    public House createHouse(House house) {
+    public HouseResponse createHouse(HouseRequest request) {
 
-        if (house.getSeller() == null ||
-                house.getSeller().getSellerId() == null) {
-
-            throw new IllegalArgumentException("Seller is required");
-        }
-
-        Long sellerId = house.getSeller().getSellerId();
-
-        Seller seller = sellerRepository.findById(sellerId)
+        Seller seller = sellerRepository.findById(request.getSellerId())
                 .orElseThrow(() ->
                         new IllegalArgumentException(
-                                "Seller not found with id: " + sellerId
-                        ));
+                                "Seller not found with id: " + request.getSellerId()));
 
+        House house = new House();
+
+        house.setTitle(request.getTitle());
+        house.setLocation(request.getLocation());
+        house.setDescription(request.getDescription());
+        house.setPrice(request.getPrice());
+        house.setBedrooms(request.getBedrooms());
+        house.setBathrooms(request.getBathrooms());
         house.setSeller(seller);
 
-        return houseRepository.save(house);
+        House savedHouse = houseRepository.save(house);
+
+        return convertToResponse(savedHouse);
     }
 
-    public List<House> getAllHouses() {
-        return houseRepository.findAll();
+    public List<HouseResponse> getAllHouses() {
+
+        return houseRepository.findAll()
+                .stream()
+                .map(this::convertToResponse)
+                .toList();
     }
 
-    public House getHouseById(Long id) {
-        return houseRepository.findById(id).orElse(null);
+    public HouseResponse getHouseById(Long id) {
+
+        House house = houseRepository.findById(id).orElse(null);
+
+        if (house == null) {
+            return null;
+        }
+
+        return convertToResponse(house);
     }
 
-    public House updateHouse(Long id, House house) {
+    public HouseResponse updateHouse(Long id, HouseRequest request) {
 
-        House existingHouse = houseRepository.findById(id)
-                .orElse(null);
+        House existingHouse = houseRepository.findById(id).orElse(null);
 
         if (existingHouse == null) {
             return null;
         }
 
-        if (house.getSeller() == null ||
-                house.getSeller().getSellerId() == null) {
-
-            throw new IllegalArgumentException("Seller is required");
-        }
-
-        Long sellerId = house.getSeller().getSellerId();
-
-        Seller seller = sellerRepository.findById(sellerId)
+        Seller seller = sellerRepository.findById(request.getSellerId())
                 .orElseThrow(() ->
                         new IllegalArgumentException(
-                                "Seller not found with id: " + sellerId
-                        ));
+                                "Seller not found with id: " + request.getSellerId()));
 
-        existingHouse.setTitle(house.getTitle());
-        existingHouse.setLocation(house.getLocation());
-        existingHouse.setDescription(house.getDescription());
-        existingHouse.setPrice(house.getPrice());
-        existingHouse.setBedrooms(house.getBedrooms());
-        existingHouse.setBathrooms(house.getBathrooms());
+        existingHouse.setTitle(request.getTitle());
+        existingHouse.setLocation(request.getLocation());
+        existingHouse.setDescription(request.getDescription());
+        existingHouse.setPrice(request.getPrice());
+        existingHouse.setBedrooms(request.getBedrooms());
+        existingHouse.setBathrooms(request.getBathrooms());
         existingHouse.setSeller(seller);
 
-        return houseRepository.save(existingHouse);
+        House updatedHouse = houseRepository.save(existingHouse);
+
+        return convertToResponse(updatedHouse);
     }
 
     public void deleteHouse(Long id) {
         houseRepository.deleteById(id);
+    }
+
+    private HouseResponse convertToResponse(House house) {
+
+        HouseResponse response = new HouseResponse();
+
+        response.setHouseId(house.getHouseId());
+        response.setTitle(house.getTitle());
+        response.setLocation(house.getLocation());
+        response.setDescription(house.getDescription());
+        response.setPrice(house.getPrice());
+        response.setBedrooms(house.getBedrooms());
+        response.setBathrooms(house.getBathrooms());
+
+        if (house.getSeller() != null) {
+            response.setSellerId(house.getSeller().getSellerId());
+        }
+
+        return response;
     }
 }

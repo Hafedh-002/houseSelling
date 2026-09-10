@@ -1,6 +1,7 @@
+package com.codelearn.houseselling.service;
 
-        package com.codelearn.houseselling.service;
-
+import com.codelearn.houseselling.dto.SaleRequest;
+import com.codelearn.houseselling.dto.SaleResponse;
 import com.codelearn.houseselling.entity.Customer;
 import com.codelearn.houseselling.entity.House;
 import com.codelearn.houseselling.entity.Sale;
@@ -28,96 +29,106 @@ public class SaleService {
         this.customerRepository = customerRepository;
     }
 
-    public Sale createSale(Sale sale) {
+    public SaleResponse createSale(SaleRequest request) {
 
-        if (sale.getHouse() == null ||
-                sale.getHouse().getHouseId() == null) {
-
-            throw new IllegalArgumentException("House is required");
-        }
-
-        if (sale.getCustomer() == null ||
-                sale.getCustomer().getCustomerId() == null) {
-
-            throw new IllegalArgumentException("Customer is required");
-        }
-
-        Long houseId = sale.getHouse().getHouseId();
-        Long customerId = sale.getCustomer().getCustomerId();
-
-        House house = houseRepository.findById(houseId)
+        House house = houseRepository.findById(request.getHouseId())
                 .orElseThrow(() ->
                         new IllegalArgumentException(
-                                "House not found with id: " + houseId
-                        ));
+                                "House not found with id: " + request.getHouseId()));
 
-        Customer customer = customerRepository.findById(customerId)
+        Customer customer = customerRepository.findById(request.getCustomerId())
                 .orElseThrow(() ->
                         new IllegalArgumentException(
-                                "Customer not found with id: " + customerId
-                        ));
+                                "Customer not found with id: " + request.getCustomerId()));
 
+        Sale sale = new Sale();
+
+        sale.setSalePrice(request.getSalePrice());
+        sale.setSaleDate(request.getSaleDate());
+        sale.setStatus(request.getStatus());
         sale.setHouse(house);
         sale.setCustomer(customer);
 
-        return saleRepository.save(sale);
+        Sale savedSale = saleRepository.save(sale);
+
+        return convertToResponse(savedSale);
     }
 
-    public List<Sale> getAllSales() {
-        return saleRepository.findAll();
+    public List<SaleResponse> getAllSales() {
+
+        return saleRepository.findAll()
+                .stream()
+                .map(this::convertToResponse)
+                .toList();
     }
 
-    public Sale getSaleById(Long id) {
-        return saleRepository.findById(id).orElse(null);
+    public SaleResponse getSaleById(Long id) {
+
+        Sale sale = saleRepository.findById(id).orElse(null);
+
+        if (sale == null) {
+            return null;
+        }
+
+        return convertToResponse(sale);
     }
 
-    public Sale updateSale(Long id, Sale sale) {
+    public SaleResponse updateSale(
+            Long id,
+            SaleRequest request) {
 
-        Sale existingSale = saleRepository.findById(id)
-                .orElse(null);
+        Sale existingSale = saleRepository.findById(id).orElse(null);
 
         if (existingSale == null) {
             return null;
         }
 
-        if (sale.getHouse() == null ||
-                sale.getHouse().getHouseId() == null) {
-
-            throw new IllegalArgumentException("House is required");
-        }
-
-        if (sale.getCustomer() == null ||
-                sale.getCustomer().getCustomerId() == null) {
-
-            throw new IllegalArgumentException("Customer is required");
-        }
-
-        Long houseId = sale.getHouse().getHouseId();
-        Long customerId = sale.getCustomer().getCustomerId();
-
-        House house = houseRepository.findById(houseId)
+        House house = houseRepository.findById(request.getHouseId())
                 .orElseThrow(() ->
                         new IllegalArgumentException(
-                                "House not found with id: " + houseId
-                        ));
+                                "House not found with id: " + request.getHouseId()));
 
-        Customer customer = customerRepository.findById(customerId)
+        Customer customer = customerRepository.findById(request.getCustomerId())
                 .orElseThrow(() ->
                         new IllegalArgumentException(
-                                "Customer not found with id: " + customerId
-                        ));
+                                "Customer not found with id: " + request.getCustomerId()));
 
-        existingSale.setSalePrice(sale.getSalePrice());
-        existingSale.setSaleDate(sale.getSaleDate());
-        existingSale.setStatus(sale.getStatus());
+        existingSale.setSalePrice(request.getSalePrice());
+        existingSale.setSaleDate(request.getSaleDate());
+        existingSale.setStatus(request.getStatus());
         existingSale.setHouse(house);
         existingSale.setCustomer(customer);
 
-        return saleRepository.save(existingSale);
+        Sale updatedSale = saleRepository.save(existingSale);
+
+        return convertToResponse(updatedSale);
     }
 
     public void deleteSale(Long id) {
         saleRepository.deleteById(id);
     }
-}
 
+    private SaleResponse convertToResponse(Sale sale) {
+
+        SaleResponse response = new SaleResponse();
+
+        response.setSaleId(sale.getSaleId());
+        response.setSalePrice(sale.getSalePrice());
+        response.setSaleDate(sale.getSaleDate());
+        response.setStatus(sale.getStatus());
+
+        if (sale.getHouse() != null) {
+            response.setHouseId(
+                    sale.getHouse().getHouseId()
+            );
+        }
+
+        if (sale.getCustomer() != null) {
+            response.setCustomerId(
+                    sale.getCustomer().getCustomerId()
+            );
+        }
+
+        return response;
+    }
+}

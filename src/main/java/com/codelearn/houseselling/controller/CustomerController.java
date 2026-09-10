@@ -1,8 +1,11 @@
 package com.codelearn.houseselling.controller;
 
-import com.codelearn.houseselling.entity.Customer;
+import com.codelearn.houseselling.dto.CustomerRequest;
+import com.codelearn.houseselling.dto.CustomerResponse;
 import com.codelearn.houseselling.service.CustomerService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,31 +21,60 @@ public class CustomerController {
     }
 
     @PostMapping
-    public Customer createCustomer(@Valid @RequestBody Customer customer) {
-        return customerService.createCustomer(customer);
+    public ResponseEntity<CustomerResponse> createCustomer(
+            @Valid @RequestBody CustomerRequest request) {
+
+        CustomerResponse response =
+                customerService.createCustomer(request);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
     }
 
     @GetMapping
-    public List<Customer> getAllCustomers() {
-        return customerService.getAllCustomers();
+    public ResponseEntity<List<CustomerResponse>> getAllCustomers() {
+
+        return ResponseEntity.ok(
+                customerService.getAllCustomers()
+        );
     }
 
     @GetMapping("/{id}")
-    public Customer getCustomerById(@PathVariable Long id) {
-        return customerService.getCustomerById(id);
+    public ResponseEntity<CustomerResponse> getCustomerById(
+            @PathVariable Long id) {
+
+        CustomerResponse response =
+                customerService.getCustomerById(id);
+
+        if (response == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
-    public Customer updateCustomer(
+    public ResponseEntity<CustomerResponse> updateCustomer(
             @PathVariable Long id,
-            @Valid @RequestBody Customer customer) {
+            @Valid @RequestBody CustomerRequest request) {
 
-        return customerService.updateCustomer(id, customer);
+        CustomerResponse response =
+                customerService.updateCustomer(id, request);
+
+        if (response == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
-    public String deleteCustomer(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteCustomer(
+            @PathVariable Long id) {
+
         customerService.deleteCustomer(id);
-        return "Customer deleted successfully";
+
+        return ResponseEntity.noContent().build();
     }
 }
