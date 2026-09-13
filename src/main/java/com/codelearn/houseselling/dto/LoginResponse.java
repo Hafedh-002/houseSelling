@@ -5,6 +5,8 @@ public class LoginResponse {
     private Long sellerId;
     private String name;
     private String email;
+    private String token;
+    private String tokenType;
     private String message;
 
     public LoginResponse() {
@@ -14,11 +16,15 @@ public class LoginResponse {
             Long sellerId,
             String name,
             String email,
+            String token,
+            String tokenType,
             String message) {
 
         this.sellerId = sellerId;
         this.name = name;
         this.email = email;
+        this.token = token;
+        this.tokenType = tokenType;
         this.message = message;
     }
 
@@ -44,6 +50,22 @@ public class LoginResponse {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+    public String getTokenType() {
+        return tokenType;
+    }
+
+    public void setTokenType(String tokenType) {
+        this.tokenType = tokenType;
     }
 
     public String getMessage() {

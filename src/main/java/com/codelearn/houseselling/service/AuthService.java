@@ -12,13 +12,16 @@ public class AuthService {
 
     private final SellerRepository sellerRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
     public AuthService(
             SellerRepository sellerRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            JwtService jwtService) {
 
         this.sellerRepository = sellerRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     public LoginResponse loginSeller(
@@ -46,10 +49,17 @@ public class AuthService {
             );
         }
 
+        String token =
+                jwtService.generateToken(
+                        seller.getEmail()
+                );
+
         return new LoginResponse(
                 seller.getSellerId(),
                 seller.getName(),
                 seller.getEmail(),
+                token,
+                "Bearer",
                 "Login successful"
         );
     }
