@@ -1,12 +1,14 @@
 package com.codelearn.houseselling.dto;
 
+import com.codelearn.houseselling.entity.BookingStatus;
+
 import java.time.LocalDate;
 
 public class BookingResponse {
 
     private Long bookingId;
     private LocalDate bookingDate;
-    private String status;
+    private BookingStatus status;
 
     private Long customerId;
     private String customerName;
@@ -30,11 +32,11 @@ public class BookingResponse {
         this.bookingDate = bookingDate;
     }
 
-    public String getStatus() {
+    public BookingStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(BookingStatus status) {
         this.status = status;
     }
 

@@ -1,6 +1,6 @@
-package com.codelearn.houseselling.dto;
 
-import jakarta.validation.constraints.NotBlank;
+        package com.codelearn.houseselling.dto;
+
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Positive;
@@ -17,14 +17,13 @@ public class SaleRequest {
     @PastOrPresent(message = "Sale date cannot be in the future")
     private LocalDate saleDate;
 
-    @NotBlank(message = "Status is required")
-    private String status;
-
     @NotNull(message = "House ID is required")
     private Long houseId;
 
     @NotNull(message = "Customer ID is required")
     private Long customerId;
+
+    private String status;
 
     public Double getSalePrice() {
         return salePrice;
@@ -42,14 +41,6 @@ public class SaleRequest {
         this.saleDate = saleDate;
     }
 
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
     public Long getHouseId() {
         return houseId;
     }
@@ -64,5 +55,13 @@ public class SaleRequest {
 
     public void setCustomerId(Long customerId) {
         this.customerId = customerId;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

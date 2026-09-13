@@ -3,6 +3,7 @@ package com.codelearn.houseselling.service;
 import com.codelearn.houseselling.dto.PaymentRequest;
 import com.codelearn.houseselling.dto.PaymentResponse;
 import com.codelearn.houseselling.entity.Booking;
+import com.codelearn.houseselling.entity.BookingStatus;
 import com.codelearn.houseselling.entity.Payment;
 import com.codelearn.houseselling.repository.BookingRepository;
 import com.codelearn.houseselling.repository.PaymentRepository;
@@ -29,7 +30,29 @@ public class PaymentService {
         Booking booking = bookingRepository.findById(request.getBookingId())
                 .orElseThrow(() ->
                         new IllegalArgumentException(
-                                "Booking not found with id: " + request.getBookingId()));
+                                "Booking not found with id: "
+                                        + request.getBookingId()));
+
+        // Rule 5:
+        // A cancelled booking cannot receive a payment.
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
+
+            throw new IllegalArgumentException(
+                    "Payment cannot be made for a cancelled booking: "
+                            + request.getBookingId());
+        }
+
+        // Rule 6:
+        // A booking cannot have more than one PAID payment.
+        if ("PAID".equalsIgnoreCase(request.getStatus())
+                && paymentRepository.existsByBookingBookingIdAndStatus(
+                request.getBookingId(),
+                "PAID")) {
+
+            throw new IllegalArgumentException(
+                    "Booking already has a paid payment: "
+                            + request.getBookingId());
+        }
 
         Payment payment = new Payment();
 
@@ -77,7 +100,29 @@ public class PaymentService {
         Booking booking = bookingRepository.findById(request.getBookingId())
                 .orElseThrow(() ->
                         new IllegalArgumentException(
-                                "Booking not found with id: " + request.getBookingId()));
+                                "Booking not found with id: "
+                                        + request.getBookingId()));
+
+        // Rule 5:
+        // A cancelled booking cannot receive a payment.
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
+
+            throw new IllegalArgumentException(
+                    "Payment cannot be made for a cancelled booking: "
+                            + request.getBookingId());
+        }
+
+        // Rule 6:
+        // A booking cannot have more than one PAID payment.
+        if ("PAID".equalsIgnoreCase(request.getStatus())
+                && paymentRepository.existsByBookingBookingIdAndStatus(
+                request.getBookingId(),
+                "PAID")) {
+
+            throw new IllegalArgumentException(
+                    "Booking already has a paid payment: "
+                            + request.getBookingId());
+        }
 
         existingPayment.setAmount(request.getAmount());
         existingPayment.setPaymentDate(request.getPaymentDate());
@@ -116,7 +161,7 @@ public class PaymentService {
             );
 
             response.setBookingStatus(
-                    payment.getBooking().getStatus()
+                    payment.getBooking().getStatus().name()
             );
         }
 

@@ -3,6 +3,7 @@ package com.codelearn.houseselling.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
+import jakarta.validation.constraints.Pattern;
 
 import java.time.LocalDate;
 
@@ -22,6 +23,10 @@ public class DocumentRequest {
     private LocalDate issueDate;
 
     @NotBlank(message = "Status is required")
+    @Pattern(
+            regexp = "VALID|EXPIRED|INVALID",
+            message = "Invalid document status. Allowed values: VALID, EXPIRED, INVALID"
+    )
     private String status;
 
     @NotNull(message = "House ID is required")

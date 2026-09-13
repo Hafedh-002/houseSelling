@@ -31,6 +31,17 @@ public class DocumentService {
                         new IllegalArgumentException(
                                 "House not found with id: " + request.getHouseId()));
 
+        // Rule 9:
+        // A house cannot have two documents with the same document number.
+        if (documentRepository.existsByHouseHouseIdAndDocumentNumber(
+                request.getHouseId(),
+                request.getDocumentNumber())) {
+
+            throw new IllegalArgumentException(
+                    "Document number already exists for house: "
+                            + request.getHouseId());
+        }
+
         Document document = new Document();
 
         document.setDocumentName(request.getDocumentName());
@@ -80,6 +91,23 @@ public class DocumentService {
                 .orElseThrow(() ->
                         new IllegalArgumentException(
                                 "House not found with id: " + request.getHouseId()));
+
+        // Rule 9:
+        // Prevent another document from using the same number
+        // for the same house.
+        if (documentRepository.existsByHouseHouseIdAndDocumentNumber(
+                request.getHouseId(),
+                request.getDocumentNumber())) {
+
+            boolean isSameDocument =
+                    existingDocument.getDocumentId().equals(id);
+
+            if (!isSameDocument) {
+                throw new IllegalArgumentException(
+                        "Document number already exists for house: "
+                                + request.getHouseId());
+            }
+        }
 
         existingDocument.setDocumentName(request.getDocumentName());
         existingDocument.setDocumentType(request.getDocumentType());

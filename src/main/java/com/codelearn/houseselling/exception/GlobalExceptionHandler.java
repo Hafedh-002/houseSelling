@@ -2,6 +2,7 @@ package com.codelearn.houseselling.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -37,6 +38,30 @@ public class GlobalExceptionHandler {
                 .map(error ->
                         error.getField() + ": " + error.getDefaultMessage())
                 .collect(Collectors.joining(", "));
+
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                message,
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(errorResponse);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleMessageNotReadableException(
+            HttpMessageNotReadableException exception) {
+
+        String message = "Invalid request data";
+
+        if (exception.getMessage() != null
+                && exception.getMessage().contains("BookingStatus")) {
+
+            message = "Invalid booking status. Allowed values: "
+                    + "PENDING, CONFIRMED, CANCELLED";
+        }
 
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),

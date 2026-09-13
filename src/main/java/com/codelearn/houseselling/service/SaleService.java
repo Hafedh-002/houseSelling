@@ -1,4 +1,5 @@
-package com.codelearn.houseselling.service;
+
+        package com.codelearn.houseselling.service;
 
 import com.codelearn.houseselling.dto.SaleRequest;
 import com.codelearn.houseselling.dto.SaleResponse;
@@ -41,6 +42,13 @@ public class SaleService {
                         new IllegalArgumentException(
                                 "Customer not found with id: " + request.getCustomerId()));
 
+        if (saleRepository.existsByHouseHouseIdAndStatus(
+                request.getHouseId(), "SOLD")) {
+
+            throw new IllegalArgumentException(
+                    "House has already been sold");
+        }
+
         Sale sale = new Sale();
 
         sale.setSalePrice(request.getSalePrice());
@@ -64,7 +72,8 @@ public class SaleService {
 
     public SaleResponse getSaleById(Long id) {
 
-        Sale sale = saleRepository.findById(id).orElse(null);
+        Sale sale = saleRepository.findById(id)
+                .orElse(null);
 
         if (sale == null) {
             return null;
@@ -77,8 +86,8 @@ public class SaleService {
             Long id,
             SaleRequest request) {
 
-        Sale existingSale =
-                saleRepository.findById(id).orElse(null);
+        Sale existingSale = saleRepository.findById(id)
+                .orElse(null);
 
         if (existingSale == null) {
             return null;
@@ -106,6 +115,12 @@ public class SaleService {
     }
 
     public void deleteSale(Long id) {
+
+        if (!saleRepository.existsById(id)) {
+            throw new IllegalArgumentException(
+                    "Sale not found with id: " + id);
+        }
+
         saleRepository.deleteById(id);
     }
 
@@ -119,7 +134,6 @@ public class SaleService {
         response.setStatus(sale.getStatus());
 
         if (sale.getHouse() != null) {
-
             response.setHouseId(
                     sale.getHouse().getHouseId()
             );
@@ -130,7 +144,6 @@ public class SaleService {
         }
 
         if (sale.getCustomer() != null) {
-
             response.setCustomerId(
                     sale.getCustomer().getCustomerId()
             );

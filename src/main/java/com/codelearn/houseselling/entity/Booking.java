@@ -2,7 +2,6 @@ package com.codelearn.houseselling.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.FutureOrPresent;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
@@ -18,8 +17,9 @@ public class Booking {
     @FutureOrPresent(message = "Booking date cannot be in the past")
     private LocalDate bookingDate;
 
-    @NotBlank(message = "Status is required")
-    private String status;
+    @NotNull(message = "Status is required")
+    @Enumerated(EnumType.STRING)
+    private BookingStatus status;
 
     @ManyToOne
     @JoinColumn(name = "customer_id")
@@ -45,11 +45,11 @@ public class Booking {
         this.bookingDate = bookingDate;
     }
 
-    public String getStatus() {
+    public BookingStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(BookingStatus status) {
         this.status = status;
     }
 

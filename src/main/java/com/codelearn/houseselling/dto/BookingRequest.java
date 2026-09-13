@@ -1,7 +1,7 @@
 package com.codelearn.houseselling.dto;
 
+import com.codelearn.houseselling.entity.BookingStatus;
 import jakarta.validation.constraints.FutureOrPresent;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
@@ -12,8 +12,8 @@ public class BookingRequest {
     @FutureOrPresent(message = "Booking date cannot be in the past")
     private LocalDate bookingDate;
 
-    @NotBlank(message = "Status is required")
-    private String status;
+    @NotNull(message = "Status is required")
+    private BookingStatus status;
 
     @NotNull(message = "Customer ID is required")
     private Long customerId;
@@ -29,11 +29,11 @@ public class BookingRequest {
         this.bookingDate = bookingDate;
     }
 
-    public String getStatus() {
+    public BookingStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(BookingStatus status) {
         this.status = status;
     }
 

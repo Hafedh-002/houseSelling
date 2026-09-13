@@ -3,6 +3,7 @@ package com.codelearn.houseselling.service;
 import com.codelearn.houseselling.dto.SellerRequest;
 import com.codelearn.houseselling.dto.SellerResponse;
 import com.codelearn.houseselling.entity.Seller;
+import com.codelearn.houseselling.repository.HouseRepository;
 import com.codelearn.houseselling.repository.SellerRepository;
 import org.springframework.stereotype.Service;
 
@@ -12,9 +13,14 @@ import java.util.List;
 public class SellerService {
 
     private final SellerRepository sellerRepository;
+    private final HouseRepository houseRepository;
 
-    public SellerService(SellerRepository sellerRepository) {
+    public SellerService(
+            SellerRepository sellerRepository,
+            HouseRepository houseRepository) {
+
         this.sellerRepository = sellerRepository;
+        this.houseRepository = houseRepository;
     }
 
     public SellerResponse createSeller(SellerRequest request) {
@@ -78,6 +84,24 @@ public class SellerService {
     }
 
     public void deleteSeller(Long id) {
+
+        Seller seller = sellerRepository.findById(id)
+                .orElse(null);
+
+        if (seller == null) {
+            throw new IllegalArgumentException(
+                    "Seller not found with id: " + id);
+        }
+
+        // Rule:
+        // A seller cannot be deleted while they still own houses.
+        if (houseRepository.existsBySellerSellerId(id)) {
+
+            throw new IllegalArgumentException(
+                    "Seller cannot be deleted because they still own houses: "
+                            + id);
+        }
+
         sellerRepository.deleteById(id);
     }
 
