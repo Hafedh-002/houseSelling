@@ -14,14 +14,16 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
+    public ResponseEntity<ErrorResponse>
+    handleIllegalArgumentException(
             IllegalArgumentException exception) {
 
-        ErrorResponse errorResponse = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                exception.getMessage(),
-                LocalDateTime.now()
-        );
+        ErrorResponse errorResponse =
+                new ErrorResponse(
+                        HttpStatus.BAD_REQUEST.value(),
+                        exception.getMessage(),
+                        LocalDateTime.now()
+                );
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
@@ -29,21 +31,29 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidationException(
+    public ResponseEntity<ErrorResponse>
+    handleValidationException(
             MethodArgumentNotValidException exception) {
 
-        String message = exception.getBindingResult()
-                .getFieldErrors()
-                .stream()
-                .map(error ->
-                        error.getField() + ": " + error.getDefaultMessage())
-                .collect(Collectors.joining(", "));
+        String message =
+                exception.getBindingResult()
+                        .getFieldErrors()
+                        .stream()
+                        .map(error ->
+                                error.getField()
+                                        + ": "
+                                        + error.getDefaultMessage()
+                        )
+                        .collect(
+                                Collectors.joining(", ")
+                        );
 
-        ErrorResponse errorResponse = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                message,
-                LocalDateTime.now()
-        );
+        ErrorResponse errorResponse =
+                new ErrorResponse(
+                        HttpStatus.BAD_REQUEST.value(),
+                        message,
+                        LocalDateTime.now()
+                );
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
@@ -51,23 +61,48 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> handleMessageNotReadableException(
+    public ResponseEntity<ErrorResponse>
+    handleMessageNotReadableException(
             HttpMessageNotReadableException exception) {
 
-        String message = "Invalid request data";
+        String message =
+                "Invalid request data";
 
-        if (exception.getMessage() != null
-                && exception.getMessage().contains("BookingStatus")) {
+        if (exception.getMessage() != null) {
 
-            message = "Invalid booking status. Allowed values: "
-                    + "PENDING, CONFIRMED, CANCELLED";
+            if (exception.getMessage()
+                    .contains("BookingStatus")) {
+
+                message =
+                        "Invalid booking status. "
+                                + "Allowed values: "
+                                + "PENDING, CONFIRMED, CANCELLED";
+            }
+
+            else if (exception.getMessage()
+                    .contains("DocumentStatus")) {
+
+                message =
+                        "Invalid document status. "
+                                + "Allowed values: "
+                                + "VALID, EXPIRED, INVALID";
+            }
+
+            else if (exception.getMessage()
+                    .contains("PaymentStatus")) {
+
+                message =
+                        "Invalid payment status. "
+                                + "Allowed value: PAID";
+            }
         }
 
-        ErrorResponse errorResponse = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                message,
-                LocalDateTime.now()
-        );
+        ErrorResponse errorResponse =
+                new ErrorResponse(
+                        HttpStatus.BAD_REQUEST.value(),
+                        message,
+                        LocalDateTime.now()
+                );
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
@@ -75,14 +110,16 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGeneralException(
+    public ResponseEntity<ErrorResponse>
+    handleGeneralException(
             Exception exception) {
 
-        ErrorResponse errorResponse = new ErrorResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "An unexpected error occurred",
-                LocalDateTime.now()
-        );
+        ErrorResponse errorResponse =
+                new ErrorResponse(
+                        HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                        "An unexpected error occurred",
+                        LocalDateTime.now()
+                );
 
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)

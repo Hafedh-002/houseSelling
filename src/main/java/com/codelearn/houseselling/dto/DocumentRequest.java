@@ -1,9 +1,9 @@
 package com.codelearn.houseselling.dto;
 
+import com.codelearn.houseselling.entity.DocumentStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
-import jakarta.validation.constraints.Pattern;
 
 import java.time.LocalDate;
 
@@ -22,12 +22,8 @@ public class DocumentRequest {
     @PastOrPresent(message = "Issue date cannot be in the future")
     private LocalDate issueDate;
 
-    @NotBlank(message = "Status is required")
-    @Pattern(
-            regexp = "VALID|EXPIRED|INVALID",
-            message = "Invalid document status. Allowed values: VALID, EXPIRED, INVALID"
-    )
-    private String status;
+    @NotNull(message = "Status is required")
+    private DocumentStatus status;
 
     @NotNull(message = "House ID is required")
     private Long houseId;
@@ -64,11 +60,11 @@ public class DocumentRequest {
         this.issueDate = issueDate;
     }
 
-    public String getStatus() {
+    public DocumentStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(DocumentStatus status) {
         this.status = status;
     }
 

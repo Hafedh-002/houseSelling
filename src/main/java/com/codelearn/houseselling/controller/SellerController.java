@@ -16,7 +16,9 @@ public class SellerController {
 
     private final SellerService sellerService;
 
-    public SellerController(SellerService sellerService) {
+    public SellerController(
+            SellerService sellerService) {
+
         this.sellerService = sellerService;
     }
 
@@ -33,7 +35,8 @@ public class SellerController {
     }
 
     @GetMapping
-    public ResponseEntity<List<SellerResponse>> getAllSellers() {
+    public ResponseEntity<List<SellerResponse>>
+    getAllSellers() {
 
         return ResponseEntity.ok(
                 sellerService.getAllSellers()
@@ -41,29 +44,38 @@ public class SellerController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<SellerResponse> getSellerById(
+    public ResponseEntity<SellerResponse>
+    getSellerById(
             @PathVariable Long id) {
 
         SellerResponse response =
                 sellerService.getSellerById(id);
 
         if (response == null) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity
+                    .notFound()
+                    .build();
         }
 
         return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<SellerResponse> updateSeller(
+    public ResponseEntity<SellerResponse>
+    updateSeller(
             @PathVariable Long id,
             @Valid @RequestBody SellerRequest request) {
 
         SellerResponse response =
-                sellerService.updateSeller(id, request);
+                sellerService.updateSeller(
+                        id,
+                        request
+                );
 
         if (response == null) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity
+                    .notFound()
+                    .build();
         }
 
         return ResponseEntity.ok(response);
@@ -75,6 +87,8 @@ public class SellerController {
 
         sellerService.deleteSeller(id);
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity
+                .noContent()
+                .build();
     }
 }

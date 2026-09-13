@@ -1,5 +1,6 @@
 package com.codelearn.houseselling.dto;
 
+import com.codelearn.houseselling.entity.PaymentStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
@@ -20,8 +21,8 @@ public class PaymentRequest {
     @NotBlank(message = "Payment method is required")
     private String paymentMethod;
 
-    @NotBlank(message = "Status is required")
-    private String status;
+    @NotNull(message = "Status is required")
+    private PaymentStatus status;
 
     @NotNull(message = "Booking ID is required")
     private Long bookingId;
@@ -50,11 +51,11 @@ public class PaymentRequest {
         this.paymentMethod = paymentMethod;
     }
 
-    public String getStatus() {
+    public PaymentStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(PaymentStatus status) {
         this.status = status;
     }
 

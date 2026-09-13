@@ -1,5 +1,7 @@
 package com.codelearn.houseselling.dto;
 
+import com.codelearn.houseselling.entity.DocumentStatus;
+
 import java.time.LocalDate;
 
 public class DocumentResponse {
@@ -9,7 +11,7 @@ public class DocumentResponse {
     private String documentType;
     private String documentNumber;
     private LocalDate issueDate;
-    private String status;
+    private DocumentStatus status;
 
     private Long houseId;
     private String houseTitle;
@@ -54,11 +56,11 @@ public class DocumentResponse {
         this.issueDate = issueDate;
     }
 
-    public String getStatus() {
+    public DocumentStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(DocumentStatus status) {
         this.status = status;
     }
 

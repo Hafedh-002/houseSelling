@@ -5,6 +5,7 @@ import com.codelearn.houseselling.dto.PaymentResponse;
 import com.codelearn.houseselling.entity.Booking;
 import com.codelearn.houseselling.entity.BookingStatus;
 import com.codelearn.houseselling.entity.Payment;
+import com.codelearn.houseselling.entity.PaymentStatus;
 import com.codelearn.houseselling.repository.BookingRepository;
 import com.codelearn.houseselling.repository.PaymentRepository;
 import org.springframework.stereotype.Service;
@@ -25,44 +26,68 @@ public class PaymentService {
         this.bookingRepository = bookingRepository;
     }
 
-    public PaymentResponse createPayment(PaymentRequest request) {
+    public PaymentResponse createPayment(
+            PaymentRequest request) {
 
-        Booking booking = bookingRepository.findById(request.getBookingId())
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Booking not found with id: "
-                                        + request.getBookingId()));
+        Booking booking =
+                bookingRepository.findById(
+                                request.getBookingId()
+                        )
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "Booking not found with id: "
+                                                + request.getBookingId()
+                                )
+                        );
 
-        // Rule 5:
-        // A cancelled booking cannot receive a payment.
-        if (booking.getStatus() == BookingStatus.CANCELLED) {
+        // A cancelled booking cannot receive payment.
+        if (booking.getStatus()
+                == BookingStatus.CANCELLED) {
 
             throw new IllegalArgumentException(
                     "Payment cannot be made for a cancelled booking: "
-                            + request.getBookingId());
+                            + request.getBookingId()
+            );
         }
 
-        // Rule 6:
         // A booking cannot have more than one PAID payment.
-        if ("PAID".equalsIgnoreCase(request.getStatus())
-                && paymentRepository.existsByBookingBookingIdAndStatus(
-                request.getBookingId(),
-                "PAID")) {
+        if (request.getStatus() == PaymentStatus.PAID
+                && paymentRepository
+                .existsByBookingBookingIdAndStatus(
+                        request.getBookingId(),
+                        PaymentStatus.PAID
+                )) {
 
             throw new IllegalArgumentException(
                     "Booking already has a paid payment: "
-                            + request.getBookingId());
+                            + request.getBookingId()
+            );
         }
 
         Payment payment = new Payment();
 
-        payment.setAmount(request.getAmount());
-        payment.setPaymentDate(request.getPaymentDate());
-        payment.setPaymentMethod(request.getPaymentMethod());
-        payment.setStatus(request.getStatus());
-        payment.setBooking(booking);
+        payment.setAmount(
+                request.getAmount()
+        );
 
-        Payment savedPayment = paymentRepository.save(payment);
+        payment.setPaymentDate(
+                request.getPaymentDate()
+        );
+
+        payment.setPaymentMethod(
+                request.getPaymentMethod()
+        );
+
+        payment.setStatus(
+                request.getStatus()
+        );
+
+        payment.setBooking(
+                booking
+        );
+
+        Payment savedPayment =
+                paymentRepository.save(payment);
 
         return convertToResponse(savedPayment);
     }
@@ -77,7 +102,9 @@ public class PaymentService {
 
     public PaymentResponse getPaymentById(Long id) {
 
-        Payment payment = paymentRepository.findById(id).orElse(null);
+        Payment payment =
+                paymentRepository.findById(id)
+                        .orElse(null);
 
         if (payment == null) {
             return null;
@@ -91,77 +118,124 @@ public class PaymentService {
             PaymentRequest request) {
 
         Payment existingPayment =
-                paymentRepository.findById(id).orElse(null);
+                paymentRepository.findById(id)
+                        .orElse(null);
 
         if (existingPayment == null) {
             return null;
         }
 
-        Booking booking = bookingRepository.findById(request.getBookingId())
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Booking not found with id: "
-                                        + request.getBookingId()));
+        Booking booking =
+                bookingRepository.findById(
+                                request.getBookingId()
+                        )
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "Booking not found with id: "
+                                                + request.getBookingId()
+                                )
+                        );
 
-        // Rule 5:
-        // A cancelled booking cannot receive a payment.
-        if (booking.getStatus() == BookingStatus.CANCELLED) {
+        // A cancelled booking cannot receive payment.
+        if (booking.getStatus()
+                == BookingStatus.CANCELLED) {
 
             throw new IllegalArgumentException(
                     "Payment cannot be made for a cancelled booking: "
-                            + request.getBookingId());
+                            + request.getBookingId()
+            );
         }
 
-        // Rule 6:
-        // A booking cannot have more than one PAID payment.
-        if ("PAID".equalsIgnoreCase(request.getStatus())
-                && paymentRepository.existsByBookingBookingIdAndStatus(
-                request.getBookingId(),
-                "PAID")) {
+        // Ignore the payment currently being updated.
+        if (request.getStatus() == PaymentStatus.PAID
+                && paymentRepository
+                .existsByBookingBookingIdAndStatusAndPaymentIdNot(
+                        request.getBookingId(),
+                        PaymentStatus.PAID,
+                        id
+                )) {
 
             throw new IllegalArgumentException(
                     "Booking already has a paid payment: "
-                            + request.getBookingId());
+                            + request.getBookingId()
+            );
         }
 
-        existingPayment.setAmount(request.getAmount());
-        existingPayment.setPaymentDate(request.getPaymentDate());
-        existingPayment.setPaymentMethod(request.getPaymentMethod());
-        existingPayment.setStatus(request.getStatus());
-        existingPayment.setBooking(booking);
+        existingPayment.setAmount(
+                request.getAmount()
+        );
+
+        existingPayment.setPaymentDate(
+                request.getPaymentDate()
+        );
+
+        existingPayment.setPaymentMethod(
+                request.getPaymentMethod()
+        );
+
+        existingPayment.setStatus(
+                request.getStatus()
+        );
+
+        existingPayment.setBooking(
+                booking
+        );
 
         Payment updatedPayment =
-                paymentRepository.save(existingPayment);
+                paymentRepository.save(
+                        existingPayment
+                );
 
         return convertToResponse(updatedPayment);
     }
 
     public void deletePayment(Long id) {
+
         paymentRepository.deleteById(id);
     }
 
-    private PaymentResponse convertToResponse(Payment payment) {
+    private PaymentResponse convertToResponse(
+            Payment payment) {
 
-        PaymentResponse response = new PaymentResponse();
+        PaymentResponse response =
+                new PaymentResponse();
 
-        response.setPaymentId(payment.getPaymentId());
-        response.setAmount(payment.getAmount());
-        response.setPaymentDate(payment.getPaymentDate());
-        response.setPaymentMethod(payment.getPaymentMethod());
-        response.setStatus(payment.getStatus());
+        response.setPaymentId(
+                payment.getPaymentId()
+        );
+
+        response.setAmount(
+                payment.getAmount()
+        );
+
+        response.setPaymentDate(
+                payment.getPaymentDate()
+        );
+
+        response.setPaymentMethod(
+                payment.getPaymentMethod()
+        );
+
+        response.setStatus(
+                payment.getStatus()
+        );
 
         if (payment.getBooking() != null) {
 
             response.setBookingId(
-                    payment.getBooking().getBookingId()
+                    payment.getBooking()
+                            .getBookingId()
             );
 
             response.setBookingDate(
-                    payment.getBooking().getBookingDate()
+                    payment.getBooking()
+                            .getBookingDate()
             );
 
             response.setBookingStatus(
-                    payment.getBooking().getStatus().name()
+                    payment.getBooking()
+                            .getStatus()
+                            .name()
             );
         }
 

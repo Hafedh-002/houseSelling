@@ -23,7 +23,10 @@ public class SellerRequest {
     private String nida;
 
     @NotBlank(message = "Password is required")
-    @Size(min = 6, message = "Password must be at least 6 characters")
+    @Size(
+            min = 6,
+            message = "Password must be at least 6 characters"
+    )
     private String password;
 
     public String getName() {

@@ -27,8 +27,9 @@ public class Document {
     @PastOrPresent(message = "Issue date cannot be in the future")
     private LocalDate issueDate;
 
-    @NotBlank(message = "Status is required")
-    private String status;
+    @NotNull(message = "Status is required")
+    @Enumerated(EnumType.STRING)
+    private DocumentStatus status;
 
     @ManyToOne
     @JoinColumn(name = "house_id")
@@ -74,11 +75,11 @@ public class Document {
         this.issueDate = issueDate;
     }
 
-    public String getStatus() {
+    public DocumentStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(DocumentStatus status) {
         this.status = status;
     }
 

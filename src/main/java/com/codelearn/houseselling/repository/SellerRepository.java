@@ -3,5 +3,12 @@ package com.codelearn.houseselling.repository;
 import com.codelearn.houseselling.entity.Seller;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface SellerRepository extends JpaRepository<Seller, Long> {
+import java.util.Optional;
+
+public interface SellerRepository
+        extends JpaRepository<Seller, Long> {
+
+    Optional<Seller> findByEmail(String email);
+
+    boolean existsByEmail(String email);
 }

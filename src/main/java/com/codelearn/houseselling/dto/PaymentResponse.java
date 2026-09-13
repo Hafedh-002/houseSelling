@@ -1,5 +1,7 @@
 package com.codelearn.houseselling.dto;
 
+import com.codelearn.houseselling.entity.PaymentStatus;
+
 import java.time.LocalDate;
 
 public class PaymentResponse {
@@ -8,7 +10,7 @@ public class PaymentResponse {
     private Double amount;
     private LocalDate paymentDate;
     private String paymentMethod;
-    private String status;
+    private PaymentStatus status;
 
     private Long bookingId;
     private LocalDate bookingDate;
@@ -46,11 +48,11 @@ public class PaymentResponse {
         this.paymentMethod = paymentMethod;
     }
 
-    public String getStatus() {
+    public PaymentStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(PaymentStatus status) {
         this.status = status;
     }
 

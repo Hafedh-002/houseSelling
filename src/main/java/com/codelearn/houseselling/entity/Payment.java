@@ -1,7 +1,6 @@
 package com.codelearn.houseselling.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Positive;
@@ -23,11 +22,12 @@ public class Payment {
     @PastOrPresent(message = "Payment date cannot be in the future")
     private LocalDate paymentDate;
 
-    @NotBlank(message = "Payment method is required")
+    @NotNull(message = "Payment method is required")
     private String paymentMethod;
 
-    @NotBlank(message = "Status is required")
-    private String status;
+    @NotNull(message = "Status is required")
+    @Enumerated(EnumType.STRING)
+    private PaymentStatus status;
 
     @ManyToOne
     @JoinColumn(name = "booking_id")
@@ -65,11 +65,11 @@ public class Payment {
         this.paymentMethod = paymentMethod;
     }
 
-    public String getStatus() {
+    public PaymentStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(PaymentStatus status) {
         this.status = status;
     }
 

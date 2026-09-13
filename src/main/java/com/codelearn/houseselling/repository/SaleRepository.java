@@ -10,5 +10,11 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
             String status
     );
 
+    boolean existsByHouseHouseIdAndStatusAndSaleIdNot(
+            Long houseId,
+            String status,
+            Long saleId
+    );
+
     boolean existsByCustomerCustomerId(Long customerId);
 }

@@ -1,5 +1,4 @@
-
-        package com.codelearn.houseselling.service;
+package com.codelearn.houseselling.service;
 
 import com.codelearn.houseselling.dto.SaleRequest;
 import com.codelearn.houseselling.dto.SaleResponse;
@@ -15,6 +14,8 @@ import java.util.List;
 
 @Service
 public class SaleService {
+
+    private static final String SOLD_STATUS = "SOLD";
 
     private final SaleRepository saleRepository;
     private final HouseRepository houseRepository;
@@ -32,18 +33,24 @@ public class SaleService {
 
     public SaleResponse createSale(SaleRequest request) {
 
-        House house = houseRepository.findById(request.getHouseId())
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "House not found with id: " + request.getHouseId()));
+        House house =
+                houseRepository.findById(request.getHouseId())
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "House not found with id: "
+                                                + request.getHouseId()));
 
-        Customer customer = customerRepository.findById(request.getCustomerId())
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Customer not found with id: " + request.getCustomerId()));
+        Customer customer =
+                customerRepository.findById(request.getCustomerId())
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "Customer not found with id: "
+                                                + request.getCustomerId()));
 
+        // A house cannot be sold more than once.
         if (saleRepository.existsByHouseHouseIdAndStatus(
-                request.getHouseId(), "SOLD")) {
+                request.getHouseId(),
+                SOLD_STATUS)) {
 
             throw new IllegalArgumentException(
                     "House has already been sold");
@@ -57,7 +64,8 @@ public class SaleService {
         sale.setHouse(house);
         sale.setCustomer(customer);
 
-        Sale savedSale = saleRepository.save(sale);
+        Sale savedSale =
+                saleRepository.save(sale);
 
         return convertToResponse(savedSale);
     }
@@ -72,8 +80,8 @@ public class SaleService {
 
     public SaleResponse getSaleById(Long id) {
 
-        Sale sale = saleRepository.findById(id)
-                .orElse(null);
+        Sale sale =
+                saleRepository.findById(id).orElse(null);
 
         if (sale == null) {
             return null;
@@ -86,22 +94,37 @@ public class SaleService {
             Long id,
             SaleRequest request) {
 
-        Sale existingSale = saleRepository.findById(id)
-                .orElse(null);
+        Sale existingSale =
+                saleRepository.findById(id).orElse(null);
 
         if (existingSale == null) {
             return null;
         }
 
-        House house = houseRepository.findById(request.getHouseId())
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "House not found with id: " + request.getHouseId()));
+        House house =
+                houseRepository.findById(request.getHouseId())
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "House not found with id: "
+                                                + request.getHouseId()));
 
-        Customer customer = customerRepository.findById(request.getCustomerId())
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Customer not found with id: " + request.getCustomerId()));
+        Customer customer =
+                customerRepository.findById(request.getCustomerId())
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "Customer not found with id: "
+                                                + request.getCustomerId()));
+
+        // Ignore the sale currently being updated.
+        if (saleRepository
+                .existsByHouseHouseIdAndStatusAndSaleIdNot(
+                        request.getHouseId(),
+                        SOLD_STATUS,
+                        id)) {
+
+            throw new IllegalArgumentException(
+                    "House has already been sold");
+        }
 
         existingSale.setSalePrice(request.getSalePrice());
         existingSale.setSaleDate(request.getSaleDate());
@@ -109,7 +132,8 @@ public class SaleService {
         existingSale.setHouse(house);
         existingSale.setCustomer(customer);
 
-        Sale updatedSale = saleRepository.save(existingSale);
+        Sale updatedSale =
+                saleRepository.save(existingSale);
 
         return convertToResponse(updatedSale);
     }
@@ -117,6 +141,7 @@ public class SaleService {
     public void deleteSale(Long id) {
 
         if (!saleRepository.existsById(id)) {
+
             throw new IllegalArgumentException(
                     "Sale not found with id: " + id);
         }
@@ -126,7 +151,8 @@ public class SaleService {
 
     private SaleResponse convertToResponse(Sale sale) {
 
-        SaleResponse response = new SaleResponse();
+        SaleResponse response =
+                new SaleResponse();
 
         response.setSaleId(sale.getSaleId());
         response.setSalePrice(sale.getSalePrice());
@@ -134,23 +160,21 @@ public class SaleService {
         response.setStatus(sale.getStatus());
 
         if (sale.getHouse() != null) {
+
             response.setHouseId(
-                    sale.getHouse().getHouseId()
-            );
+                    sale.getHouse().getHouseId());
 
             response.setHouseTitle(
-                    sale.getHouse().getTitle()
-            );
+                    sale.getHouse().getTitle());
         }
 
         if (sale.getCustomer() != null) {
+
             response.setCustomerId(
-                    sale.getCustomer().getCustomerId()
-            );
+                    sale.getCustomer().getCustomerId());
 
             response.setCustomerName(
-                    sale.getCustomer().getName()
-            );
+                    sale.getCustomer().getName());
         }
 
         return response;

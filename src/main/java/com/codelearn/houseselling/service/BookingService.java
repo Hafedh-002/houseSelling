@@ -39,34 +39,36 @@ public class BookingService {
         Customer customer = customerRepository.findById(request.getCustomerId())
                 .orElseThrow(() ->
                         new IllegalArgumentException(
-                                "Customer not found with id: " + request.getCustomerId()));
+                                "Customer not found with id: "
+                                        + request.getCustomerId()));
 
         House house = houseRepository.findById(request.getHouseId())
                 .orElseThrow(() ->
                         new IllegalArgumentException(
-                                "House not found with id: " + request.getHouseId()));
+                                "House not found with id: "
+                                        + request.getHouseId()));
 
-        // Rule 3:
-        // A house with a completed sale cannot receive a new booking.
+        // A sold house cannot receive a new booking.
         if (saleRepository.existsByHouseHouseIdAndStatus(
                 request.getHouseId(),
-                "COMPLETED")) {
+                "SOLD")) {
 
             throw new IllegalArgumentException(
                     "House is already sold and cannot be booked: "
                             + request.getHouseId());
         }
 
-        // Rule 4:
-        // A house cannot have multiple active bookings
-        // on the same date.
-        if (bookingRepository.existsByHouseHouseIdAndBookingDateAndStatusIn(
-                request.getHouseId(),
-                request.getBookingDate(),
-                List.of(
-                        BookingStatus.PENDING,
-                        BookingStatus.CONFIRMED
-                ))) {
+        // Only active bookings must be unique
+        // for the same house and date.
+        if (isActiveStatus(request.getStatus())
+                && bookingRepository
+                .existsByHouseHouseIdAndBookingDateAndStatusIn(
+                        request.getHouseId(),
+                        request.getBookingDate(),
+                        List.of(
+                                BookingStatus.PENDING,
+                                BookingStatus.CONFIRMED
+                        ))) {
 
             throw new IllegalArgumentException(
                     "House already has an active booking on this date: "
@@ -80,12 +82,14 @@ public class BookingService {
         booking.setCustomer(customer);
         booking.setHouse(house);
 
-        Booking savedBooking = bookingRepository.save(booking);
+        Booking savedBooking =
+                bookingRepository.save(booking);
 
         return convertToResponse(savedBooking);
     }
 
     public List<BookingResponse> getAllBookings() {
+
         return bookingRepository.findAll()
                 .stream()
                 .map(this::convertToResponse)
@@ -93,7 +97,9 @@ public class BookingService {
     }
 
     public BookingResponse getBookingById(Long id) {
-        Booking booking = bookingRepository.findById(id).orElse(null);
+
+        Booking booking =
+                bookingRepository.findById(id).orElse(null);
 
         if (booking == null) {
             return null;
@@ -113,46 +119,45 @@ public class BookingService {
             return null;
         }
 
-        Customer customer = customerRepository.findById(request.getCustomerId())
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Customer not found with id: " + request.getCustomerId()));
+        Customer customer =
+                customerRepository.findById(request.getCustomerId())
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "Customer not found with id: "
+                                                + request.getCustomerId()));
 
-        House house = houseRepository.findById(request.getHouseId())
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "House not found with id: " + request.getHouseId()));
+        House house =
+                houseRepository.findById(request.getHouseId())
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "House not found with id: "
+                                                + request.getHouseId()));
 
-        // Rule 3:
-        // A house with a completed sale cannot receive a booking.
+        // A sold house cannot receive a booking.
         if (saleRepository.existsByHouseHouseIdAndStatus(
                 request.getHouseId(),
-                "COMPLETED")) {
+                "SOLD")) {
 
             throw new IllegalArgumentException(
                     "House is already sold and cannot be booked: "
                             + request.getHouseId());
         }
 
-        // Rule 4:
-        // Prevent another active booking for the same
-        // house and date.
-        if (bookingRepository.existsByHouseHouseIdAndBookingDateAndStatusIn(
-                request.getHouseId(),
-                request.getBookingDate(),
-                List.of(
-                        BookingStatus.PENDING,
-                        BookingStatus.CONFIRMED
-                ))) {
+        // Ignore the booking currently being updated.
+        if (isActiveStatus(request.getStatus())
+                && bookingRepository
+                .existsByHouseHouseIdAndBookingDateAndStatusInAndBookingIdNot(
+                        request.getHouseId(),
+                        request.getBookingDate(),
+                        List.of(
+                                BookingStatus.PENDING,
+                                BookingStatus.CONFIRMED
+                        ),
+                        id)) {
 
-            boolean isSameBooking =
-                    existingBooking.getBookingId().equals(id);
-
-            if (!isSameBooking) {
-                throw new IllegalArgumentException(
-                        "House already has an active booking on this date: "
-                                + request.getBookingDate());
-            }
+            throw new IllegalArgumentException(
+                    "House already has an active booking on this date: "
+                            + request.getBookingDate());
         }
 
         existingBooking.setBookingDate(request.getBookingDate());
@@ -170,15 +175,23 @@ public class BookingService {
         bookingRepository.deleteById(id);
     }
 
+    private boolean isActiveStatus(BookingStatus status) {
+
+        return status == BookingStatus.PENDING
+                || status == BookingStatus.CONFIRMED;
+    }
+
     private BookingResponse convertToResponse(Booking booking) {
 
-        BookingResponse response = new BookingResponse();
+        BookingResponse response =
+                new BookingResponse();
 
         response.setBookingId(booking.getBookingId());
         response.setBookingDate(booking.getBookingDate());
         response.setStatus(booking.getStatus());
 
         if (booking.getCustomer() != null) {
+
             response.setCustomerId(
                     booking.getCustomer().getCustomerId());
 
@@ -187,6 +200,7 @@ public class BookingService {
         }
 
         if (booking.getHouse() != null) {
+
             response.setHouseId(
                     booking.getHouse().getHouseId());
 
