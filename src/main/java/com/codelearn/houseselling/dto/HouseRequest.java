@@ -27,9 +27,6 @@ public class HouseRequest {
     @Positive(message = "Bathrooms must be greater than zero")
     private Integer bathrooms;
 
-    @NotNull(message = "Seller ID is required")
-    private Long sellerId;
-
     public String getTitle() {
         return title;
     }
@@ -76,13 +73,5 @@ public class HouseRequest {
 
     public void setBathrooms(Integer bathrooms) {
         this.bathrooms = bathrooms;
-    }
-
-    public Long getSellerId() {
-        return sellerId;
-    }
-
-    public void setSellerId(Long sellerId) {
-        this.sellerId = sellerId;
     }
 }

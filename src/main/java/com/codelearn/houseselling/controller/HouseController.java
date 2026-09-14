@@ -16,7 +16,9 @@ public class HouseController {
 
     private final HouseService houseService;
 
-    public HouseController(HouseService houseService) {
+    public HouseController(
+            HouseService houseService) {
+
         this.houseService = houseService;
     }
 
@@ -24,7 +26,8 @@ public class HouseController {
     public ResponseEntity<HouseResponse> createHouse(
             @Valid @RequestBody HouseRequest request) {
 
-        HouseResponse response = houseService.createHouse(request);
+        HouseResponse response =
+                houseService.createHouse(request);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -32,7 +35,8 @@ public class HouseController {
     }
 
     @GetMapping
-    public ResponseEntity<List<HouseResponse>> getAllHouses() {
+    public ResponseEntity<List<HouseResponse>>
+    getAllHouses() {
 
         return ResponseEntity.ok(
                 houseService.getAllHouses()
@@ -40,28 +44,40 @@ public class HouseController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<HouseResponse> getHouseById(
+    public ResponseEntity<HouseResponse>
+    getHouseById(
             @PathVariable Long id) {
 
-        HouseResponse response = houseService.getHouseById(id);
+        HouseResponse response =
+                houseService.getHouseById(id);
 
         if (response == null) {
-            return ResponseEntity.notFound().build();
+
+            return ResponseEntity
+                    .notFound()
+                    .build();
         }
 
         return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<HouseResponse> updateHouse(
+    public ResponseEntity<HouseResponse>
+    updateHouse(
             @PathVariable Long id,
             @Valid @RequestBody HouseRequest request) {
 
         HouseResponse response =
-                houseService.updateHouse(id, request);
+                houseService.updateHouse(
+                        id,
+                        request
+                );
 
         if (response == null) {
-            return ResponseEntity.notFound().build();
+
+            return ResponseEntity
+                    .notFound()
+                    .build();
         }
 
         return ResponseEntity.ok(response);
@@ -71,8 +87,18 @@ public class HouseController {
     public ResponseEntity<Void> deleteHouse(
             @PathVariable Long id) {
 
-        houseService.deleteHouse(id);
+        boolean deleted =
+                houseService.deleteHouse(id);
 
-        return ResponseEntity.noContent().build();
+        if (!deleted) {
+
+            return ResponseEntity
+                    .notFound()
+                    .build();
+        }
+
+        return ResponseEntity
+                .noContent()
+                .build();
     }
 }

@@ -16,16 +16,23 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
-    public PaymentController(PaymentService paymentService) {
-        this.paymentService = paymentService;
+    public PaymentController(
+            PaymentService paymentService) {
+
+        this.paymentService =
+                paymentService;
     }
 
     @PostMapping
-    public ResponseEntity<PaymentResponse> createPayment(
-            @Valid @RequestBody PaymentRequest request) {
+    public ResponseEntity<PaymentResponse>
+    createPayment(
+            @Valid @RequestBody
+            PaymentRequest request) {
 
         PaymentResponse response =
-                paymentService.createPayment(request);
+                paymentService.createPayment(
+                        request
+                );
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -33,7 +40,8 @@ public class PaymentController {
     }
 
     @GetMapping
-    public ResponseEntity<List<PaymentResponse>> getAllPayments() {
+    public ResponseEntity<List<PaymentResponse>>
+    getAllPayments() {
 
         return ResponseEntity.ok(
                 paymentService.getAllPayments()
@@ -41,40 +49,64 @@ public class PaymentController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PaymentResponse> getPaymentById(
+    public ResponseEntity<PaymentResponse>
+    getPaymentById(
             @PathVariable Long id) {
 
         PaymentResponse response =
-                paymentService.getPaymentById(id);
+                paymentService
+                        .getPaymentById(id);
 
         if (response == null) {
-            return ResponseEntity.notFound().build();
+
+            return ResponseEntity
+                    .notFound()
+                    .build();
         }
 
         return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<PaymentResponse> updatePayment(
+    public ResponseEntity<PaymentResponse>
+    updatePayment(
             @PathVariable Long id,
-            @Valid @RequestBody PaymentRequest request) {
+            @Valid @RequestBody
+            PaymentRequest request) {
 
         PaymentResponse response =
-                paymentService.updatePayment(id, request);
+                paymentService.updatePayment(
+                        id,
+                        request
+                );
 
         if (response == null) {
-            return ResponseEntity.notFound().build();
+
+            return ResponseEntity
+                    .notFound()
+                    .build();
         }
 
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePayment(
+    public ResponseEntity<Void>
+    deletePayment(
             @PathVariable Long id) {
 
-        paymentService.deletePayment(id);
+        boolean deleted =
+                paymentService.deletePayment(id);
 
-        return ResponseEntity.noContent().build();
+        if (!deleted) {
+
+            return ResponseEntity
+                    .notFound()
+                    .build();
+        }
+
+        return ResponseEntity
+                .noContent()
+                .build();
     }
 }

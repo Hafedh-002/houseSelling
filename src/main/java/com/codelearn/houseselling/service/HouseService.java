@@ -6,6 +6,8 @@ import com.codelearn.houseselling.entity.House;
 import com.codelearn.houseselling.entity.Seller;
 import com.codelearn.houseselling.repository.HouseRepository;
 import com.codelearn.houseselling.repository.SellerRepository;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,12 +26,10 @@ public class HouseService {
         this.sellerRepository = sellerRepository;
     }
 
-    public HouseResponse createHouse(HouseRequest request) {
+    public HouseResponse createHouse(
+            HouseRequest request) {
 
-        Seller seller = sellerRepository.findById(request.getSellerId())
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Seller not found with id: " + request.getSellerId()));
+        Seller seller = getLoggedInSeller();
 
         House house = new House();
 
@@ -39,16 +39,24 @@ public class HouseService {
         house.setPrice(request.getPrice());
         house.setBedrooms(request.getBedrooms());
         house.setBathrooms(request.getBathrooms());
+
+        // Logged-in seller automatically becomes owner.
         house.setSeller(seller);
 
-        House savedHouse = houseRepository.save(house);
+        House savedHouse =
+                houseRepository.save(house);
 
         return convertToResponse(savedHouse);
     }
 
     public List<HouseResponse> getAllHouses() {
 
-        return houseRepository.findAll()
+        Seller seller = getLoggedInSeller();
+
+        return houseRepository
+                .findBySellerSellerId(
+                        seller.getSellerId()
+                )
                 .stream()
                 .map(this::convertToResponse)
                 .toList();
@@ -56,7 +64,15 @@ public class HouseService {
 
     public HouseResponse getHouseById(Long id) {
 
-        House house = houseRepository.findById(id).orElse(null);
+        Seller seller = getLoggedInSeller();
+
+        House house =
+                houseRepository
+                        .findByHouseIdAndSellerSellerId(
+                                id,
+                                seller.getSellerId()
+                        )
+                        .orElse(null);
 
         if (house == null) {
             return null;
@@ -69,53 +85,147 @@ public class HouseService {
             Long id,
             HouseRequest request) {
 
-        House existingHouse = houseRepository.findById(id).orElse(null);
+        Seller seller = getLoggedInSeller();
+
+        House existingHouse =
+                houseRepository
+                        .findByHouseIdAndSellerSellerId(
+                                id,
+                                seller.getSellerId()
+                        )
+                        .orElse(null);
 
         if (existingHouse == null) {
             return null;
         }
 
-        Seller seller = sellerRepository.findById(request.getSellerId())
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Seller not found with id: " + request.getSellerId()));
+        existingHouse.setTitle(
+                request.getTitle()
+        );
 
-        existingHouse.setTitle(request.getTitle());
-        existingHouse.setLocation(request.getLocation());
-        existingHouse.setDescription(request.getDescription());
-        existingHouse.setPrice(request.getPrice());
-        existingHouse.setBedrooms(request.getBedrooms());
-        existingHouse.setBathrooms(request.getBathrooms());
+        existingHouse.setLocation(
+                request.getLocation()
+        );
+
+        existingHouse.setDescription(
+                request.getDescription()
+        );
+
+        existingHouse.setPrice(
+                request.getPrice()
+        );
+
+        existingHouse.setBedrooms(
+                request.getBedrooms()
+        );
+
+        existingHouse.setBathrooms(
+                request.getBathrooms()
+        );
+
+        // Seller does not change during update.
         existingHouse.setSeller(seller);
 
-        House updatedHouse = houseRepository.save(existingHouse);
+        House updatedHouse =
+                houseRepository.save(
+                        existingHouse
+                );
 
         return convertToResponse(updatedHouse);
     }
 
-    public void deleteHouse(Long id) {
-        houseRepository.deleteById(id);
+    public boolean deleteHouse(Long id) {
+
+        Seller seller = getLoggedInSeller();
+
+        House house =
+                houseRepository
+                        .findByHouseIdAndSellerSellerId(
+                                id,
+                                seller.getSellerId()
+                        )
+                        .orElse(null);
+
+        if (house == null) {
+            return false;
+        }
+
+        houseRepository.delete(house);
+
+        return true;
     }
 
-    private HouseResponse convertToResponse(House house) {
+    private Seller getLoggedInSeller() {
 
-        HouseResponse response = new HouseResponse();
+        Authentication authentication =
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
 
-        response.setHouseId(house.getHouseId());
-        response.setTitle(house.getTitle());
-        response.setLocation(house.getLocation());
-        response.setDescription(house.getDescription());
-        response.setPrice(house.getPrice());
-        response.setBedrooms(house.getBedrooms());
-        response.setBathrooms(house.getBathrooms());
+        if (authentication == null
+                || !authentication.isAuthenticated()) {
+
+            throw new IllegalArgumentException(
+                    "Seller is not authenticated"
+            );
+        }
+
+        String email =
+                authentication.getName();
+
+        return sellerRepository
+                .findByEmail(email)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Logged-in seller not found"
+                        )
+                );
+    }
+
+    private HouseResponse convertToResponse(
+            House house) {
+
+        HouseResponse response =
+                new HouseResponse();
+
+        response.setHouseId(
+                house.getHouseId()
+        );
+
+        response.setTitle(
+                house.getTitle()
+        );
+
+        response.setLocation(
+                house.getLocation()
+        );
+
+        response.setDescription(
+                house.getDescription()
+        );
+
+        response.setPrice(
+                house.getPrice()
+        );
+
+        response.setBedrooms(
+                house.getBedrooms()
+        );
+
+        response.setBathrooms(
+                house.getBathrooms()
+        );
 
         if (house.getSeller() != null) {
+
             response.setSellerId(
-                    house.getSeller().getSellerId()
+                    house.getSeller()
+                            .getSellerId()
             );
 
             response.setSellerName(
-                    house.getSeller().getName()
+                    house.getSeller()
+                            .getName()
             );
         }
 

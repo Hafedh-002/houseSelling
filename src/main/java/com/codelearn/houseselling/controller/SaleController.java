@@ -16,16 +16,22 @@ public class SaleController {
 
     private final SaleService saleService;
 
-    public SaleController(SaleService saleService) {
+    public SaleController(
+            SaleService saleService) {
+
         this.saleService = saleService;
     }
 
     @PostMapping
-    public ResponseEntity<SaleResponse> createSale(
-            @Valid @RequestBody SaleRequest request) {
+    public ResponseEntity<SaleResponse>
+    createSale(
+            @Valid @RequestBody
+            SaleRequest request) {
 
         SaleResponse response =
-                saleService.createSale(request);
+                saleService.createSale(
+                        request
+                );
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -33,7 +39,8 @@ public class SaleController {
     }
 
     @GetMapping
-    public ResponseEntity<List<SaleResponse>> getAllSales() {
+    public ResponseEntity<List<SaleResponse>>
+    getAllSales() {
 
         return ResponseEntity.ok(
                 saleService.getAllSales()
@@ -41,40 +48,63 @@ public class SaleController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<SaleResponse> getSaleById(
+    public ResponseEntity<SaleResponse>
+    getSaleById(
             @PathVariable Long id) {
 
         SaleResponse response =
                 saleService.getSaleById(id);
 
         if (response == null) {
-            return ResponseEntity.notFound().build();
+
+            return ResponseEntity
+                    .notFound()
+                    .build();
         }
 
         return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<SaleResponse> updateSale(
+    public ResponseEntity<SaleResponse>
+    updateSale(
             @PathVariable Long id,
-            @Valid @RequestBody SaleRequest request) {
+            @Valid @RequestBody
+            SaleRequest request) {
 
         SaleResponse response =
-                saleService.updateSale(id, request);
+                saleService.updateSale(
+                        id,
+                        request
+                );
 
         if (response == null) {
-            return ResponseEntity.notFound().build();
+
+            return ResponseEntity
+                    .notFound()
+                    .build();
         }
 
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteSale(
+    public ResponseEntity<Void>
+    deleteSale(
             @PathVariable Long id) {
 
-        saleService.deleteSale(id);
+        boolean deleted =
+                saleService.deleteSale(id);
 
-        return ResponseEntity.noContent().build();
+        if (!deleted) {
+
+            return ResponseEntity
+                    .notFound()
+                    .build();
+        }
+
+        return ResponseEntity
+                .noContent()
+                .build();
     }
 }

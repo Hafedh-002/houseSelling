@@ -3,7 +3,11 @@ package com.codelearn.houseselling.repository;
 import com.codelearn.houseselling.entity.Sale;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface SaleRepository extends JpaRepository<Sale, Long> {
+import java.util.List;
+import java.util.Optional;
+
+public interface SaleRepository
+        extends JpaRepository<Sale, Long> {
 
     boolean existsByHouseHouseIdAndStatus(
             Long houseId,
@@ -16,5 +20,16 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
             Long saleId
     );
 
-    boolean existsByCustomerCustomerId(Long customerId);
+    boolean existsByCustomerCustomerId(
+            Long customerId
+    );
+
+    List<Sale> findByHouseSellerSellerId(
+            Long sellerId
+    );
+
+    Optional<Sale> findBySaleIdAndHouseSellerSellerId(
+            Long saleId,
+            Long sellerId
+    );
 }

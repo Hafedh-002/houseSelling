@@ -16,16 +16,23 @@ public class BookingController {
 
     private final BookingService bookingService;
 
-    public BookingController(BookingService bookingService) {
-        this.bookingService = bookingService;
+    public BookingController(
+            BookingService bookingService) {
+
+        this.bookingService =
+                bookingService;
     }
 
     @PostMapping
-    public ResponseEntity<BookingResponse> createBooking(
-            @Valid @RequestBody BookingRequest request) {
+    public ResponseEntity<BookingResponse>
+    createBooking(
+            @Valid @RequestBody
+            BookingRequest request) {
 
         BookingResponse response =
-                bookingService.createBooking(request);
+                bookingService.createBooking(
+                        request
+                );
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -33,7 +40,8 @@ public class BookingController {
     }
 
     @GetMapping
-    public ResponseEntity<List<BookingResponse>> getAllBookings() {
+    public ResponseEntity<List<BookingResponse>>
+    getAllBookings() {
 
         return ResponseEntity.ok(
                 bookingService.getAllBookings()
@@ -41,40 +49,64 @@ public class BookingController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<BookingResponse> getBookingById(
+    public ResponseEntity<BookingResponse>
+    getBookingById(
             @PathVariable Long id) {
 
         BookingResponse response =
-                bookingService.getBookingById(id);
+                bookingService
+                        .getBookingById(id);
 
         if (response == null) {
-            return ResponseEntity.notFound().build();
+
+            return ResponseEntity
+                    .notFound()
+                    .build();
         }
 
         return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<BookingResponse> updateBooking(
+    public ResponseEntity<BookingResponse>
+    updateBooking(
             @PathVariable Long id,
-            @Valid @RequestBody BookingRequest request) {
+            @Valid @RequestBody
+            BookingRequest request) {
 
         BookingResponse response =
-                bookingService.updateBooking(id, request);
+                bookingService.updateBooking(
+                        id,
+                        request
+                );
 
         if (response == null) {
-            return ResponseEntity.notFound().build();
+
+            return ResponseEntity
+                    .notFound()
+                    .build();
         }
 
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteBooking(
+    public ResponseEntity<Void>
+    deleteBooking(
             @PathVariable Long id) {
 
-        bookingService.deleteBooking(id);
+        boolean deleted =
+                bookingService.deleteBooking(id);
 
-        return ResponseEntity.noContent().build();
+        if (!deleted) {
+
+            return ResponseEntity
+                    .notFound()
+                    .build();
+        }
+
+        return ResponseEntity
+                .noContent()
+                .build();
     }
 }

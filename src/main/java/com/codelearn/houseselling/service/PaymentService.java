@@ -6,8 +6,13 @@ import com.codelearn.houseselling.entity.Booking;
 import com.codelearn.houseselling.entity.BookingStatus;
 import com.codelearn.houseselling.entity.Payment;
 import com.codelearn.houseselling.entity.PaymentStatus;
+import com.codelearn.houseselling.entity.Seller;
 import com.codelearn.houseselling.repository.BookingRepository;
 import com.codelearn.houseselling.repository.PaymentRepository;
+import com.codelearn.houseselling.repository.SellerRepository;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,22 +22,26 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
+    private final SellerRepository sellerRepository;
 
     public PaymentService(
             PaymentRepository paymentRepository,
-            BookingRepository bookingRepository) {
+            BookingRepository bookingRepository,
+            SellerRepository sellerRepository) {
 
         this.paymentRepository = paymentRepository;
         this.bookingRepository = bookingRepository;
+        this.sellerRepository = sellerRepository;
     }
 
     public PaymentResponse createPayment(
             PaymentRequest request) {
 
+        Seller seller = getLoggedInSeller();
+
         Booking booking =
-                bookingRepository.findById(
-                                request.getBookingId()
-                        )
+                bookingRepository
+                        .findById(request.getBookingId())
                         .orElseThrow(() ->
                                 new IllegalArgumentException(
                                         "Booking not found with id: "
@@ -40,9 +49,22 @@ public class PaymentService {
                                 )
                         );
 
-        // A cancelled booking cannot receive payment.
-        if (booking.getStatus()
-                == BookingStatus.CANCELLED) {
+        // Seller can only create payment
+        // for a booking belonging to their house.
+        if (booking.getHouse() == null
+                || booking.getHouse().getSeller() == null
+                || !booking.getHouse()
+                .getSeller()
+                .getSellerId()
+                .equals(seller.getSellerId())) {
+
+            throw new AccessDeniedException(
+                    "You cannot create a payment for another seller's booking"
+            );
+        }
+
+        // Cancelled booking cannot receive payment.
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
 
             throw new IllegalArgumentException(
                     "Payment cannot be made for a cancelled booking: "
@@ -50,7 +72,7 @@ public class PaymentService {
             );
         }
 
-        // A booking cannot have more than one PAID payment.
+        // Booking cannot have more than one PAID payment.
         if (request.getStatus() == PaymentStatus.PAID
                 && paymentRepository
                 .existsByBookingBookingIdAndStatus(
@@ -94,16 +116,28 @@ public class PaymentService {
 
     public List<PaymentResponse> getAllPayments() {
 
-        return paymentRepository.findAll()
+        Seller seller = getLoggedInSeller();
+
+        return paymentRepository
+                .findByBookingHouseSellerSellerId(
+                        seller.getSellerId()
+                )
                 .stream()
                 .map(this::convertToResponse)
                 .toList();
     }
 
-    public PaymentResponse getPaymentById(Long id) {
+    public PaymentResponse getPaymentById(
+            Long id) {
+
+        Seller seller = getLoggedInSeller();
 
         Payment payment =
-                paymentRepository.findById(id)
+                paymentRepository
+                        .findByPaymentIdAndBookingHouseSellerSellerId(
+                                id,
+                                seller.getSellerId()
+                        )
                         .orElse(null);
 
         if (payment == null) {
@@ -117,8 +151,14 @@ public class PaymentService {
             Long id,
             PaymentRequest request) {
 
+        Seller seller = getLoggedInSeller();
+
         Payment existingPayment =
-                paymentRepository.findById(id)
+                paymentRepository
+                        .findByPaymentIdAndBookingHouseSellerSellerId(
+                                id,
+                                seller.getSellerId()
+                        )
                         .orElse(null);
 
         if (existingPayment == null) {
@@ -126,9 +166,8 @@ public class PaymentService {
         }
 
         Booking booking =
-                bookingRepository.findById(
-                                request.getBookingId()
-                        )
+                bookingRepository
+                        .findById(request.getBookingId())
                         .orElseThrow(() ->
                                 new IllegalArgumentException(
                                         "Booking not found with id: "
@@ -136,9 +175,21 @@ public class PaymentService {
                                 )
                         );
 
-        // A cancelled booking cannot receive payment.
-        if (booking.getStatus()
-                == BookingStatus.CANCELLED) {
+        // Seller cannot move a payment
+        // to another seller's booking.
+        if (booking.getHouse() == null
+                || booking.getHouse().getSeller() == null
+                || !booking.getHouse()
+                .getSeller()
+                .getSellerId()
+                .equals(seller.getSellerId())) {
+
+            throw new AccessDeniedException(
+                    "You cannot use another seller's booking"
+            );
+        }
+
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
 
             throw new IllegalArgumentException(
                     "Payment cannot be made for a cancelled booking: "
@@ -189,9 +240,53 @@ public class PaymentService {
         return convertToResponse(updatedPayment);
     }
 
-    public void deletePayment(Long id) {
+    public boolean deletePayment(
+            Long id) {
 
-        paymentRepository.deleteById(id);
+        Seller seller = getLoggedInSeller();
+
+        Payment payment =
+                paymentRepository
+                        .findByPaymentIdAndBookingHouseSellerSellerId(
+                                id,
+                                seller.getSellerId()
+                        )
+                        .orElse(null);
+
+        if (payment == null) {
+            return false;
+        }
+
+        paymentRepository.delete(payment);
+
+        return true;
+    }
+
+    private Seller getLoggedInSeller() {
+
+        Authentication authentication =
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
+
+        if (authentication == null
+                || !authentication.isAuthenticated()) {
+
+            throw new AccessDeniedException(
+                    "Seller is not authenticated"
+            );
+        }
+
+        String email =
+                authentication.getName();
+
+        return sellerRepository
+                .findByEmail(email)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Logged-in seller not found"
+                        )
+                );
     }
 
     private PaymentResponse convertToResponse(

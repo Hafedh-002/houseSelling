@@ -3,6 +3,7 @@ package com.codelearn.houseselling.exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -27,6 +28,23 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
+                .body(errorResponse);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse>
+    handleAccessDeniedException(
+            AccessDeniedException exception) {
+
+        ErrorResponse errorResponse =
+                new ErrorResponse(
+                        HttpStatus.FORBIDDEN.value(),
+                        exception.getMessage(),
+                        LocalDateTime.now()
+                );
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
                 .body(errorResponse);
     }
 
@@ -86,14 +104,6 @@ public class GlobalExceptionHandler {
                         "Invalid document status. "
                                 + "Allowed values: "
                                 + "VALID, EXPIRED, INVALID";
-            }
-
-            else if (exception.getMessage()
-                    .contains("PaymentStatus")) {
-
-                message =
-                        "Invalid payment status. "
-                                + "Allowed value: PAID";
             }
         }
 
