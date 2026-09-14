@@ -24,6 +24,9 @@ public class Management {
     @NotBlank(message = "Role is required")
     private String role;
 
+    @Column(length = 255)
+    private String password;
+
     public Long getManagementId() {
         return managementId;
     }
@@ -62,5 +65,13 @@ public class Management {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 }

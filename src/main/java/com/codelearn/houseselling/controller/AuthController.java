@@ -2,7 +2,9 @@ package com.codelearn.houseselling.controller;
 
 import com.codelearn.houseselling.dto.LoginRequest;
 import com.codelearn.houseselling.dto.LoginResponse;
+import com.codelearn.houseselling.dto.ManagementLoginResponse;
 import com.codelearn.houseselling.service.AuthService;
+import com.codelearn.houseselling.service.ManagementAuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,19 +15,41 @@ public class AuthController {
 
     private final AuthService authService;
 
-    public AuthController(
-            AuthService authService) {
+    private final ManagementAuthService
+            managementAuthService;
 
-        this.authService = authService;
+    public AuthController(
+            AuthService authService,
+            ManagementAuthService managementAuthService) {
+
+        this.authService =
+                authService;
+
+        this.managementAuthService =
+                managementAuthService;
     }
 
     @PostMapping("/seller/login")
-    public ResponseEntity<LoginResponse> loginSeller(
-            @Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<LoginResponse>
+    loginSeller(
+            @Valid @RequestBody
+            LoginRequest request) {
 
-        LoginResponse response =
-                authService.loginSeller(request);
+        return ResponseEntity.ok(
+                authService
+                        .loginSeller(request)
+        );
+    }
 
-        return ResponseEntity.ok(response);
+    @PostMapping("/management/login")
+    public ResponseEntity<ManagementLoginResponse>
+    loginManagement(
+            @Valid @RequestBody
+            LoginRequest request) {
+
+        return ResponseEntity.ok(
+                managementAuthService
+                        .login(request)
+        );
     }
 }

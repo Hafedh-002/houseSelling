@@ -16,16 +16,22 @@ public class CustomerController {
 
     private final CustomerService customerService;
 
-    public CustomerController(CustomerService customerService) {
-        this.customerService = customerService;
+    public CustomerController(
+            CustomerService customerService) {
+
+        this.customerService =
+                customerService;
     }
 
     @PostMapping
-    public ResponseEntity<CustomerResponse> createCustomer(
-            @Valid @RequestBody CustomerRequest request) {
+    public ResponseEntity<CustomerResponse>
+    createCustomer(
+            @Valid @RequestBody
+            CustomerRequest request) {
 
         CustomerResponse response =
-                customerService.createCustomer(request);
+                customerService
+                        .createCustomer(request);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -33,48 +39,76 @@ public class CustomerController {
     }
 
     @GetMapping
-    public ResponseEntity<List<CustomerResponse>> getAllCustomers() {
+    public ResponseEntity<List<CustomerResponse>>
+    getAllCustomers() {
 
         return ResponseEntity.ok(
-                customerService.getAllCustomers()
+                customerService
+                        .getAllCustomers()
         );
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<CustomerResponse> getCustomerById(
+    public ResponseEntity<CustomerResponse>
+    getCustomerById(
             @PathVariable Long id) {
 
         CustomerResponse response =
-                customerService.getCustomerById(id);
+                customerService
+                        .getCustomerById(id);
 
         if (response == null) {
-            return ResponseEntity.notFound().build();
+
+            return ResponseEntity
+                    .notFound()
+                    .build();
         }
 
         return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<CustomerResponse> updateCustomer(
+    public ResponseEntity<CustomerResponse>
+    updateCustomer(
             @PathVariable Long id,
-            @Valid @RequestBody CustomerRequest request) {
+            @Valid @RequestBody
+            CustomerRequest request) {
 
         CustomerResponse response =
-                customerService.updateCustomer(id, request);
+                customerService
+                        .updateCustomer(
+                                id,
+                                request
+                        );
 
         if (response == null) {
-            return ResponseEntity.notFound().build();
+
+            return ResponseEntity
+                    .notFound()
+                    .build();
         }
 
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCustomer(
+    public ResponseEntity<Void>
+    deleteCustomer(
             @PathVariable Long id) {
 
-        customerService.deleteCustomer(id);
+        boolean deleted =
+                customerService
+                        .deleteCustomer(id);
 
-        return ResponseEntity.noContent().build();
+        if (!deleted) {
+
+            return ResponseEntity
+                    .notFound()
+                    .build();
+        }
+
+        return ResponseEntity
+                .noContent()
+                .build();
     }
 }

@@ -36,4 +36,14 @@ public interface BookingRepository
             Long bookingId,
             Long sellerId
     );
+
+    boolean existsByCustomerCustomerIdAndHouseSellerSellerId(
+            Long customerId,
+            Long sellerId
+    );
+
+    boolean existsByCustomerCustomerIdAndHouseSellerSellerIdNot(
+            Long customerId,
+            Long sellerId
+    );
 }

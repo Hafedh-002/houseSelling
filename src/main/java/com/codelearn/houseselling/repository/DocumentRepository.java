@@ -3,10 +3,29 @@ package com.codelearn.houseselling.repository;
 import com.codelearn.houseselling.entity.Document;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface DocumentRepository extends JpaRepository<Document, Long> {
+import java.util.List;
+import java.util.Optional;
+
+public interface DocumentRepository
+        extends JpaRepository<Document, Long> {
 
     boolean existsByHouseHouseIdAndDocumentNumber(
             Long houseId,
             String documentNumber
+    );
+
+    boolean existsByHouseHouseIdAndDocumentNumberAndDocumentIdNot(
+            Long houseId,
+            String documentNumber,
+            Long documentId
+    );
+
+    List<Document> findByHouseSellerSellerId(
+            Long sellerId
+    );
+
+    Optional<Document> findByDocumentIdAndHouseSellerSellerId(
+            Long documentId,
+            Long sellerId
     );
 }

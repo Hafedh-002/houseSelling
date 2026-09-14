@@ -5,7 +5,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -17,7 +16,8 @@ public class SecurityConfig {
             jwtAuthenticationFilter;
 
     public SecurityConfig(
-            JwtAuthenticationFilter jwtAuthenticationFilter) {
+            JwtAuthenticationFilter
+                    jwtAuthenticationFilter) {
 
         this.jwtAuthenticationFilter =
                 jwtAuthenticationFilter;
@@ -29,42 +29,58 @@ public class SecurityConfig {
             throws Exception {
 
         http
-                .csrf(
-                        AbstractHttpConfigurer::disable
+                .csrf(csrf ->
+                        csrf.disable()
                 )
 
-                .formLogin(
-                        AbstractHttpConfigurer::disable
+                .formLogin(form ->
+                        form.disable()
                 )
 
-                .httpBasic(
-                        AbstractHttpConfigurer::disable
+                .httpBasic(basic ->
+                        basic.disable()
                 )
 
-                .sessionManagement(
-                        session ->
-                                session.sessionCreationPolicy(
-                                        SessionCreationPolicy.STATELESS
-                                )
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(
+                                SessionCreationPolicy.STATELESS
+                        )
                 )
 
-                .authorizeHttpRequests(
-                        auth -> auth
+                .authorizeHttpRequests(auth ->
+                        auth
 
-                                // Login is public
+                                // Login endpoints
                                 .requestMatchers(
                                         "/api/auth/**"
                                 )
                                 .permitAll()
 
-                                // Seller registration is public
+                                // Seller registration
                                 .requestMatchers(
                                         HttpMethod.POST,
                                         "/api/sellers"
                                 )
                                 .permitAll()
 
-                                // Everything else needs JWT
+                                // Management/Admin only
+                                .requestMatchers(
+                                        "/api/management/**"
+                                )
+                                .hasRole("ADMIN")
+
+                                // Seller endpoints
+                                .requestMatchers(
+                                        "/api/houses/**",
+                                        "/api/bookings/**",
+                                        "/api/payments/**",
+                                        "/api/sales/**",
+                                        "/api/documents/**",
+                                        "/api/customers/**",
+                                        "/api/sellers/**"
+                                )
+                                .hasRole("SELLER")
+
                                 .anyRequest()
                                 .authenticated()
                 )

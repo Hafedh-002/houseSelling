@@ -1,26 +1,26 @@
 package com.codelearn.houseselling.service;
 
 import com.codelearn.houseselling.dto.LoginRequest;
-import com.codelearn.houseselling.dto.LoginResponse;
-import com.codelearn.houseselling.entity.Seller;
-import com.codelearn.houseselling.repository.SellerRepository;
+import com.codelearn.houseselling.dto.ManagementLoginResponse;
+import com.codelearn.houseselling.entity.Management;
+import com.codelearn.houseselling.repository.ManagementRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
-public class AuthService {
+public class ManagementAuthService {
 
-    private final SellerRepository sellerRepository;
+    private final ManagementRepository managementRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
-    public AuthService(
-            SellerRepository sellerRepository,
+    public ManagementAuthService(
+            ManagementRepository managementRepository,
             PasswordEncoder passwordEncoder,
             JwtService jwtService) {
 
-        this.sellerRepository =
-                sellerRepository;
+        this.managementRepository =
+                managementRepository;
 
         this.passwordEncoder =
                 passwordEncoder;
@@ -29,11 +29,11 @@ public class AuthService {
                 jwtService;
     }
 
-    public LoginResponse loginSeller(
+    public ManagementLoginResponse login(
             LoginRequest request) {
 
-        Seller seller =
-                sellerRepository
+        Management management =
+                managementRepository
                         .findByEmail(
                                 request.getEmail()
                         )
@@ -45,26 +45,32 @@ public class AuthService {
 
         if (!passwordEncoder.matches(
                 request.getPassword(),
-                seller.getPassword())) {
+                management.getPassword())) {
 
             throw new IllegalArgumentException(
                     "Invalid email or password"
             );
         }
 
+        String role =
+                management
+                        .getRole()
+                        .toUpperCase();
+
         String token =
                 jwtService.generateToken(
-                        seller.getEmail(),
-                        "SELLER"
+                        management.getEmail(),
+                        role
                 );
 
-        return new LoginResponse(
-                seller.getSellerId(),
-                seller.getName(),
-                seller.getEmail(),
+        return new ManagementLoginResponse(
+                management.getManagementId(),
+                management.getName(),
+                management.getEmail(),
+                role,
                 token,
                 "Bearer",
-                "Login successful"
+                "Management login successful"
         );
     }
 }

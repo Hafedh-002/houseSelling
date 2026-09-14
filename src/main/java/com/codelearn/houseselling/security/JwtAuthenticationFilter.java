@@ -5,15 +5,14 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
+import java.util.List;
 
 @Component
 public class JwtAuthenticationFilter
@@ -36,11 +35,12 @@ public class JwtAuthenticationFilter
 
         String authHeader =
                 request.getHeader(
-                        HttpHeaders.AUTHORIZATION
+                        "Authorization"
                 );
 
         if (authHeader == null
-                || !authHeader.startsWith("Bearer ")) {
+                || !authHeader.startsWith(
+                "Bearer ")) {
 
             filterChain.doFilter(
                     request,
@@ -56,33 +56,54 @@ public class JwtAuthenticationFilter
         try {
 
             String email =
-                    jwtService.extractEmail(token);
+                    jwtService
+                            .extractEmail(token);
+
+            String role =
+                    jwtService
+                            .extractRole(token);
 
             if (email != null
+                    && role != null
                     && SecurityContextHolder
                     .getContext()
-                    .getAuthentication() == null
-                    && jwtService.isTokenValid(
-                    token,
-                    email
-            )) {
+                    .getAuthentication()
+                    == null) {
 
-                UsernamePasswordAuthenticationToken
-                        authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                email,
-                                null,
-                                Collections.emptyList()
-                        );
+                if (jwtService
+                        .isTokenValid(
+                                token,
+                                email
+                        )) {
 
-                authentication.setDetails(
-                        new WebAuthenticationDetailsSource()
-                                .buildDetails(request)
-                );
+                    String normalizedRole =
+                            role
+                                    .toUpperCase()
+                                    .replace(
+                                            "ROLE_",
+                                            ""
+                                    );
 
-                SecurityContextHolder
-                        .getContext()
-                        .setAuthentication(authentication);
+                    SimpleGrantedAuthority authority =
+                            new SimpleGrantedAuthority(
+                                    "ROLE_"
+                                            + normalizedRole
+                            );
+
+                    UsernamePasswordAuthenticationToken
+                            authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    email,
+                                    null,
+                                    List.of(authority)
+                            );
+
+                    SecurityContextHolder
+                            .getContext()
+                            .setAuthentication(
+                                    authentication
+                            );
+                }
             }
 
         } catch (Exception ignored) {

@@ -16,16 +16,23 @@ public class DocumentController {
 
     private final DocumentService documentService;
 
-    public DocumentController(DocumentService documentService) {
-        this.documentService = documentService;
+    public DocumentController(
+            DocumentService documentService) {
+
+        this.documentService =
+                documentService;
     }
 
     @PostMapping
-    public ResponseEntity<DocumentResponse> createDocument(
-            @Valid @RequestBody DocumentRequest request) {
+    public ResponseEntity<DocumentResponse>
+    createDocument(
+            @Valid @RequestBody
+            DocumentRequest request) {
 
         DocumentResponse response =
-                documentService.createDocument(request);
+                documentService.createDocument(
+                        request
+                );
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -33,7 +40,8 @@ public class DocumentController {
     }
 
     @GetMapping
-    public ResponseEntity<List<DocumentResponse>> getAllDocuments() {
+    public ResponseEntity<List<DocumentResponse>>
+    getAllDocuments() {
 
         return ResponseEntity.ok(
                 documentService.getAllDocuments()
@@ -41,40 +49,64 @@ public class DocumentController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<DocumentResponse> getDocumentById(
+    public ResponseEntity<DocumentResponse>
+    getDocumentById(
             @PathVariable Long id) {
 
         DocumentResponse response =
-                documentService.getDocumentById(id);
+                documentService
+                        .getDocumentById(id);
 
         if (response == null) {
-            return ResponseEntity.notFound().build();
+
+            return ResponseEntity
+                    .notFound()
+                    .build();
         }
 
         return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<DocumentResponse> updateDocument(
+    public ResponseEntity<DocumentResponse>
+    updateDocument(
             @PathVariable Long id,
-            @Valid @RequestBody DocumentRequest request) {
+            @Valid @RequestBody
+            DocumentRequest request) {
 
         DocumentResponse response =
-                documentService.updateDocument(id, request);
+                documentService.updateDocument(
+                        id,
+                        request
+                );
 
         if (response == null) {
-            return ResponseEntity.notFound().build();
+
+            return ResponseEntity
+                    .notFound()
+                    .build();
         }
 
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteDocument(
+    public ResponseEntity<Void>
+    deleteDocument(
             @PathVariable Long id) {
 
-        documentService.deleteDocument(id);
+        boolean deleted =
+                documentService.deleteDocument(id);
 
-        return ResponseEntity.noContent().build();
+        if (!deleted) {
+
+            return ResponseEntity
+                    .notFound()
+                    .build();
+        }
+
+        return ResponseEntity
+                .noContent()
+                .build();
     }
 }

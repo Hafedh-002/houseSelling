@@ -28,27 +28,45 @@ public class JwtService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateToken(String email) {
+    public String generateToken(
+            String email,
+            String role) {
 
         Date now = new Date();
 
         Date expiration =
                 new Date(
-                        now.getTime() + jwtExpiration
+                        now.getTime()
+                                + jwtExpiration
                 );
 
         return Jwts.builder()
                 .subject(email)
+                .claim(
+                        "role",
+                        role.toUpperCase()
+                )
                 .issuedAt(now)
                 .expiration(expiration)
                 .signWith(getSigningKey())
                 .compact();
     }
 
-    public String extractEmail(String token) {
+    public String extractEmail(
+            String token) {
 
         return extractClaims(token)
                 .getSubject();
+    }
+
+    public String extractRole(
+            String token) {
+
+        return extractClaims(token)
+                .get(
+                        "role",
+                        String.class
+                );
     }
 
     public boolean isTokenValid(
@@ -60,26 +78,28 @@ public class JwtService {
             Claims claims =
                     extractClaims(token);
 
-            String tokenEmail =
-                    claims.getSubject();
+            return email.equals(
+                    claims.getSubject()
+            )
+                    && claims
+                    .getExpiration()
+                    .after(new Date());
 
-            Date expiration =
-                    claims.getExpiration();
-
-            return email.equals(tokenEmail)
-                    && expiration.after(new Date());
-
-        } catch (JwtException |
-                 IllegalArgumentException exception) {
+        } catch (
+                JwtException
+                | IllegalArgumentException e) {
 
             return false;
         }
     }
 
-    private Claims extractClaims(String token) {
+    private Claims extractClaims(
+            String token) {
 
         return Jwts.parser()
-                .verifyWith(getSigningKey())
+                .verifyWith(
+                        getSigningKey()
+                )
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();

@@ -32,4 +32,14 @@ public interface SaleRepository
             Long saleId,
             Long sellerId
     );
+
+    boolean existsByCustomerCustomerIdAndHouseSellerSellerId(
+            Long customerId,
+            Long sellerId
+    );
+
+    boolean existsByCustomerCustomerIdAndHouseSellerSellerIdNot(
+            Long customerId,
+            Long sellerId
+    );
 }

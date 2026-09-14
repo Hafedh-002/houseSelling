@@ -2,13 +2,22 @@ package com.codelearn.houseselling.service;
 
 import com.codelearn.houseselling.dto.CustomerRequest;
 import com.codelearn.houseselling.dto.CustomerResponse;
+import com.codelearn.houseselling.entity.Booking;
 import com.codelearn.houseselling.entity.Customer;
+import com.codelearn.houseselling.entity.Sale;
+import com.codelearn.houseselling.entity.Seller;
 import com.codelearn.houseselling.repository.BookingRepository;
 import com.codelearn.houseselling.repository.CustomerRepository;
 import com.codelearn.houseselling.repository.SaleRepository;
+import com.codelearn.houseselling.repository.SellerRepository;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class CustomerService {
@@ -16,50 +25,130 @@ public class CustomerService {
     private final CustomerRepository customerRepository;
     private final BookingRepository bookingRepository;
     private final SaleRepository saleRepository;
+    private final SellerRepository sellerRepository;
 
     public CustomerService(
             CustomerRepository customerRepository,
             BookingRepository bookingRepository,
-            SaleRepository saleRepository) {
+            SaleRepository saleRepository,
+            SellerRepository sellerRepository) {
 
         this.customerRepository = customerRepository;
         this.bookingRepository = bookingRepository;
         this.saleRepository = saleRepository;
+        this.sellerRepository = sellerRepository;
     }
 
-    public CustomerResponse createCustomer(CustomerRequest request) {
+    public CustomerResponse createCustomer(
+            CustomerRequest request) {
 
-        // Prevent duplicate customer email
-        if (customerRepository.existsByEmail(request.getEmail())) {
+        // Request must come from an authenticated seller.
+        getLoggedInSeller();
+
+        if (customerRepository.existsByEmail(
+                request.getEmail())) {
+
             throw new IllegalArgumentException(
                     "Customer email already exists: "
-                            + request.getEmail());
+                            + request.getEmail()
+            );
         }
 
         Customer customer = new Customer();
 
-        customer.setName(request.getName());
-        customer.setEmail(request.getEmail());
-        customer.setPhone(request.getPhone());
-        customer.setAddress(request.getAddress());
+        customer.setName(
+                request.getName()
+        );
 
-        Customer savedCustomer = customerRepository.save(customer);
+        customer.setEmail(
+                request.getEmail()
+        );
+
+        customer.setPhone(
+                request.getPhone()
+        );
+
+        customer.setAddress(
+                request.getAddress()
+        );
+
+        Customer savedCustomer =
+                customerRepository.save(customer);
 
         return convertToResponse(savedCustomer);
     }
 
     public List<CustomerResponse> getAllCustomers() {
 
-        return customerRepository.findAll()
+        Seller seller = getLoggedInSeller();
+
+        Map<Long, Customer> customers =
+                new LinkedHashMap<>();
+
+        // Customers with bookings on seller's houses.
+        List<Booking> bookings =
+                bookingRepository
+                        .findByHouseSellerSellerId(
+                                seller.getSellerId()
+                        );
+
+        for (Booking booking : bookings) {
+
+            Customer customer =
+                    booking.getCustomer();
+
+            if (customer != null) {
+
+                customers.put(
+                        customer.getCustomerId(),
+                        customer
+                );
+            }
+        }
+
+        // Customers with sales on seller's houses.
+        List<Sale> sales =
+                saleRepository
+                        .findByHouseSellerSellerId(
+                                seller.getSellerId()
+                        );
+
+        for (Sale sale : sales) {
+
+            Customer customer =
+                    sale.getCustomer();
+
+            if (customer != null) {
+
+                customers.put(
+                        customer.getCustomerId(),
+                        customer
+                );
+            }
+        }
+
+        return customers.values()
                 .stream()
                 .map(this::convertToResponse)
                 .toList();
     }
 
-    public CustomerResponse getCustomerById(Long id) {
+    public CustomerResponse getCustomerById(
+            Long id) {
 
-        Customer customer = customerRepository.findById(id)
-                .orElse(null);
+        Seller seller = getLoggedInSeller();
+
+        if (!canAccessCustomer(
+                id,
+                seller.getSellerId())) {
+
+            return null;
+        }
+
+        Customer customer =
+                customerRepository
+                        .findById(id)
+                        .orElse(null);
 
         if (customer == null) {
             return null;
@@ -72,76 +161,217 @@ public class CustomerService {
             Long id,
             CustomerRequest request) {
 
-        Customer existingCustomer = customerRepository.findById(id)
-                .orElse(null);
+        Seller seller = getLoggedInSeller();
+
+        if (!canAccessCustomer(
+                id,
+                seller.getSellerId())) {
+
+            return null;
+        }
+
+        Customer existingCustomer =
+                customerRepository
+                        .findById(id)
+                        .orElse(null);
 
         if (existingCustomer == null) {
             return null;
         }
 
-        // Prevent another customer from using the same email
-        if (customerRepository.existsByEmail(request.getEmail())
-                && !existingCustomer.getEmail()
+        /*
+         * If this customer is also connected
+         * to another seller, do not allow one
+         * seller to change shared customer data.
+         */
+        if (isCustomerSharedWithAnotherSeller(
+                id,
+                seller.getSellerId())) {
+
+            throw new AccessDeniedException(
+                    "Customer is also associated with another seller "
+                            + "and cannot be updated directly"
+            );
+        }
+
+        if (customerRepository
+                .existsByEmail(request.getEmail())
+                && !existingCustomer
+                .getEmail()
                 .equals(request.getEmail())) {
 
             throw new IllegalArgumentException(
                     "Customer email already exists: "
-                            + request.getEmail());
+                            + request.getEmail()
+            );
         }
 
-        existingCustomer.setName(request.getName());
-        existingCustomer.setEmail(request.getEmail());
-        existingCustomer.setPhone(request.getPhone());
-        existingCustomer.setAddress(request.getAddress());
+        existingCustomer.setName(
+                request.getName()
+        );
+
+        existingCustomer.setEmail(
+                request.getEmail()
+        );
+
+        existingCustomer.setPhone(
+                request.getPhone()
+        );
+
+        existingCustomer.setAddress(
+                request.getAddress()
+        );
 
         Customer updatedCustomer =
-                customerRepository.save(existingCustomer);
+                customerRepository.save(
+                        existingCustomer
+                );
 
         return convertToResponse(updatedCustomer);
     }
 
-    public void deleteCustomer(Long id) {
+    public boolean deleteCustomer(
+            Long id) {
 
-        Customer customer = customerRepository.findById(id)
-                .orElse(null);
+        Seller seller = getLoggedInSeller();
 
-        if (customer == null) {
-            throw new IllegalArgumentException(
-                    "Customer not found with id: " + id);
+        if (!canAccessCustomer(
+                id,
+                seller.getSellerId())) {
+
+            return false;
         }
 
-        // Rule 12:
-        // A customer cannot be deleted while they
-        // still have bookings.
-        if (bookingRepository.existsByCustomerCustomerId(id)) {
+        Customer customer =
+                customerRepository
+                        .findById(id)
+                        .orElse(null);
+
+        if (customer == null) {
+            return false;
+        }
+
+        // Customer cannot be deleted
+        // while bookings still exist.
+        if (bookingRepository
+                .existsByCustomerCustomerId(id)) {
 
             throw new IllegalArgumentException(
                     "Customer cannot be deleted because they have bookings: "
-                            + id);
+                            + id
+            );
         }
 
-        // Rule 13:
-        // A customer cannot be deleted while they
-        // still have sales.
-        if (saleRepository.existsByCustomerCustomerId(id)) {
+        // Customer cannot be deleted
+        // while sales still exist.
+        if (saleRepository
+                .existsByCustomerCustomerId(id)) {
 
             throw new IllegalArgumentException(
                     "Customer cannot be deleted because they have sales: "
-                            + id);
+                            + id
+            );
         }
 
-        customerRepository.deleteById(id);
+        customerRepository.delete(customer);
+
+        return true;
     }
 
-    private CustomerResponse convertToResponse(Customer customer) {
+    private boolean canAccessCustomer(
+            Long customerId,
+            Long sellerId) {
 
-        CustomerResponse response = new CustomerResponse();
+        boolean hasBooking =
+                bookingRepository
+                        .existsByCustomerCustomerIdAndHouseSellerSellerId(
+                                customerId,
+                                sellerId
+                        );
 
-        response.setCustomerId(customer.getCustomerId());
-        response.setName(customer.getName());
-        response.setEmail(customer.getEmail());
-        response.setPhone(customer.getPhone());
-        response.setAddress(customer.getAddress());
+        boolean hasSale =
+                saleRepository
+                        .existsByCustomerCustomerIdAndHouseSellerSellerId(
+                                customerId,
+                                sellerId
+                        );
+
+        return hasBooking || hasSale;
+    }
+
+    private boolean isCustomerSharedWithAnotherSeller(
+            Long customerId,
+            Long sellerId) {
+
+        boolean otherBooking =
+                bookingRepository
+                        .existsByCustomerCustomerIdAndHouseSellerSellerIdNot(
+                                customerId,
+                                sellerId
+                        );
+
+        boolean otherSale =
+                saleRepository
+                        .existsByCustomerCustomerIdAndHouseSellerSellerIdNot(
+                                customerId,
+                                sellerId
+                        );
+
+        return otherBooking || otherSale;
+    }
+
+    private Seller getLoggedInSeller() {
+
+        Authentication authentication =
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
+
+        if (authentication == null
+                || !authentication.isAuthenticated()) {
+
+            throw new AccessDeniedException(
+                    "Seller is not authenticated"
+            );
+        }
+
+        String email =
+                authentication.getName();
+
+        return sellerRepository
+                .findByEmail(email)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Logged-in seller not found"
+                        )
+                );
+    }
+
+    private CustomerResponse convertToResponse(
+            Customer customer) {
+
+        CustomerResponse response =
+                new CustomerResponse();
+
+        response.setCustomerId(
+                customer.getCustomerId()
+        );
+
+        response.setName(
+                customer.getName()
+        );
+
+        response.setEmail(
+                customer.getEmail()
+        );
+
+        response.setPhone(
+                customer.getPhone()
+        );
+
+        response.setAddress(
+                customer.getAddress()
+        );
 
         return response;
     }
