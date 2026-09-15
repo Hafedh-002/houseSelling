@@ -13,6 +13,7 @@ import com.codelearn.houseselling.repository.SellerRepository;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashMap;
@@ -26,23 +27,26 @@ public class CustomerService {
     private final BookingRepository bookingRepository;
     private final SaleRepository saleRepository;
     private final SellerRepository sellerRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public CustomerService(
             CustomerRepository customerRepository,
             BookingRepository bookingRepository,
             SaleRepository saleRepository,
-            SellerRepository sellerRepository) {
+            SellerRepository sellerRepository,
+            PasswordEncoder passwordEncoder) {
 
         this.customerRepository = customerRepository;
         this.bookingRepository = bookingRepository;
         this.saleRepository = saleRepository;
         this.sellerRepository = sellerRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
+    // SELLER CREATES CUSTOMER
     public CustomerResponse createCustomer(
             CustomerRequest request) {
 
-        // Request must come from an authenticated seller.
         getLoggedInSeller();
 
         if (customerRepository.existsByEmail(
@@ -72,20 +76,31 @@ public class CustomerService {
                 request.getAddress()
         );
 
-        Customer savedCustomer =
-                customerRepository.save(customer);
+        customer.setPassword(
+                passwordEncoder.encode(
+                        request.getPassword()
+                )
+        );
 
-        return convertToResponse(savedCustomer);
+        Customer savedCustomer =
+                customerRepository.save(
+                        customer
+                );
+
+        return convertToResponse(
+                savedCustomer
+        );
     }
 
+    // SELLER GETS CUSTOMERS RELATED TO HIS/HER HOUSES
     public List<CustomerResponse> getAllCustomers() {
 
-        Seller seller = getLoggedInSeller();
+        Seller seller =
+                getLoggedInSeller();
 
         Map<Long, Customer> customers =
                 new LinkedHashMap<>();
 
-        // Customers with bookings on seller's houses.
         List<Booking> bookings =
                 bookingRepository
                         .findByHouseSellerSellerId(
@@ -106,7 +121,6 @@ public class CustomerService {
             }
         }
 
-        // Customers with sales on seller's houses.
         List<Sale> sales =
                 saleRepository
                         .findByHouseSellerSellerId(
@@ -136,7 +150,8 @@ public class CustomerService {
     public CustomerResponse getCustomerById(
             Long id) {
 
-        Seller seller = getLoggedInSeller();
+        Seller seller =
+                getLoggedInSeller();
 
         if (!canAccessCustomer(
                 id,
@@ -161,7 +176,8 @@ public class CustomerService {
             Long id,
             CustomerRequest request) {
 
-        Seller seller = getLoggedInSeller();
+        Seller seller =
+                getLoggedInSeller();
 
         if (!canAccessCustomer(
                 id,
@@ -179,11 +195,6 @@ public class CustomerService {
             return null;
         }
 
-        /*
-         * If this customer is also connected
-         * to another seller, do not allow one
-         * seller to change shared customer data.
-         */
         if (isCustomerSharedWithAnotherSeller(
                 id,
                 seller.getSellerId())) {
@@ -222,18 +233,27 @@ public class CustomerService {
                 request.getAddress()
         );
 
+        existingCustomer.setPassword(
+                passwordEncoder.encode(
+                        request.getPassword()
+                )
+        );
+
         Customer updatedCustomer =
                 customerRepository.save(
                         existingCustomer
                 );
 
-        return convertToResponse(updatedCustomer);
+        return convertToResponse(
+                updatedCustomer
+        );
     }
 
     public boolean deleteCustomer(
             Long id) {
 
-        Seller seller = getLoggedInSeller();
+        Seller seller =
+                getLoggedInSeller();
 
         if (!canAccessCustomer(
                 id,
@@ -251,8 +271,6 @@ public class CustomerService {
             return false;
         }
 
-        // Customer cannot be deleted
-        // while bookings still exist.
         if (bookingRepository
                 .existsByCustomerCustomerId(id)) {
 
@@ -262,8 +280,6 @@ public class CustomerService {
             );
         }
 
-        // Customer cannot be deleted
-        // while sales still exist.
         if (saleRepository
                 .existsByCustomerCustomerId(id)) {
 

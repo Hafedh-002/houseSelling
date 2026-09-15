@@ -8,8 +8,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/sellers")
 public class SellerController {
@@ -22,8 +20,10 @@ public class SellerController {
         this.sellerService = sellerService;
     }
 
+    // PUBLIC REGISTRATION
     @PostMapping
-    public ResponseEntity<SellerResponse> createSeller(
+    public ResponseEntity<SellerResponse>
+    createSeller(
             @Valid @RequestBody SellerRequest request) {
 
         SellerResponse response =
@@ -34,58 +34,35 @@ public class SellerController {
                 .body(response);
     }
 
-    @GetMapping
-    public ResponseEntity<List<SellerResponse>>
-    getAllSellers() {
+    // LOGGED-IN SELLER PROFILE
+    @GetMapping("/me")
+    public ResponseEntity<SellerResponse>
+    getMyProfile() {
 
         return ResponseEntity.ok(
-                sellerService.getAllSellers()
+                sellerService.getMyProfile()
         );
     }
 
-    @GetMapping("/{id}")
+    // UPDATE LOGGED-IN SELLER
+    @PutMapping("/me")
     public ResponseEntity<SellerResponse>
-    getSellerById(
-            @PathVariable Long id) {
-
-        SellerResponse response =
-                sellerService.getSellerById(id);
-
-        if (response == null) {
-            return ResponseEntity
-                    .notFound()
-                    .build();
-        }
-
-        return ResponseEntity.ok(response);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<SellerResponse>
-    updateSeller(
-            @PathVariable Long id,
+    updateMyProfile(
             @Valid @RequestBody SellerRequest request) {
 
-        SellerResponse response =
-                sellerService.updateSeller(
-                        id,
+        return ResponseEntity.ok(
+                sellerService.updateMyProfile(
                         request
-                );
-
-        if (response == null) {
-            return ResponseEntity
-                    .notFound()
-                    .build();
-        }
-
-        return ResponseEntity.ok(response);
+                )
+        );
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteSeller(
-            @PathVariable Long id) {
+    // DELETE LOGGED-IN SELLER
+    @DeleteMapping("/me")
+    public ResponseEntity<Void>
+    deleteMyProfile() {
 
-        sellerService.deleteSeller(id);
+        sellerService.deleteMyProfile();
 
         return ResponseEntity
                 .noContent()

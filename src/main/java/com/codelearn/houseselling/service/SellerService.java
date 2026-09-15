@@ -5,10 +5,11 @@ import com.codelearn.houseselling.dto.SellerResponse;
 import com.codelearn.houseselling.entity.Seller;
 import com.codelearn.houseselling.repository.HouseRepository;
 import com.codelearn.houseselling.repository.SellerRepository;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class SellerService {
@@ -27,8 +28,18 @@ public class SellerService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    // PUBLIC REGISTRATION
     public SellerResponse createSeller(
             SellerRequest request) {
+
+        if (sellerRepository.existsByEmail(
+                request.getEmail())) {
+
+            throw new IllegalArgumentException(
+                    "Seller email already exists: "
+                            + request.getEmail()
+            );
+        }
 
         Seller seller = new Seller();
 
@@ -38,7 +49,6 @@ public class SellerService {
         seller.setAddress(request.getAddress());
         seller.setNida(request.getNida());
 
-        // Hash password before saving
         seller.setPassword(
                 passwordEncoder.encode(
                         request.getPassword()
@@ -51,101 +61,93 @@ public class SellerService {
         return convertToResponse(savedSeller);
     }
 
-    public List<SellerResponse> getAllSellers() {
+    // GET LOGGED-IN SELLER
+    public SellerResponse getMyProfile() {
 
-        return sellerRepository.findAll()
-                .stream()
-                .map(this::convertToResponse)
-                .toList();
-    }
-
-    public SellerResponse getSellerById(Long id) {
-
-        Seller seller =
-                sellerRepository.findById(id)
-                        .orElse(null);
-
-        if (seller == null) {
-            return null;
-        }
+        Seller seller = getLoggedInSeller();
 
         return convertToResponse(seller);
     }
 
-    public SellerResponse updateSeller(
-            Long id,
+    // UPDATE LOGGED-IN SELLER
+    public SellerResponse updateMyProfile(
             SellerRequest request) {
 
-        Seller existingSeller =
-                sellerRepository.findById(id)
-                        .orElse(null);
+        Seller seller = getLoggedInSeller();
 
-        if (existingSeller == null) {
-            return null;
+        if (sellerRepository
+                .existsByEmailAndSellerIdNot(
+                        request.getEmail(),
+                        seller.getSellerId()
+                )) {
+
+            throw new IllegalArgumentException(
+                    "Seller email already exists: "
+                            + request.getEmail()
+            );
         }
 
-        existingSeller.setName(
-                request.getName()
-        );
+        seller.setName(request.getName());
+        seller.setEmail(request.getEmail());
+        seller.setPhone(request.getPhone());
+        seller.setAddress(request.getAddress());
+        seller.setNida(request.getNida());
 
-        existingSeller.setEmail(
-                request.getEmail()
-        );
-
-        existingSeller.setPhone(
-                request.getPhone()
-        );
-
-        existingSeller.setAddress(
-                request.getAddress()
-        );
-
-        existingSeller.setNida(
-                request.getNida()
-        );
-
-        // Hash new password before updating
-        existingSeller.setPassword(
+        seller.setPassword(
                 passwordEncoder.encode(
                         request.getPassword()
                 )
         );
 
         Seller updatedSeller =
-                sellerRepository.save(
-                        existingSeller
-                );
+                sellerRepository.save(seller);
 
         return convertToResponse(updatedSeller);
     }
 
-    public void deleteSeller(Long id) {
+    // DELETE LOGGED-IN SELLER
+    public void deleteMyProfile() {
 
-        Seller seller =
-                sellerRepository.findById(id)
-                        .orElse(null);
+        Seller seller = getLoggedInSeller();
 
-        if (seller == null) {
-
-            throw new IllegalArgumentException(
-                    "Seller not found with id: "
-                            + id
-            );
-        }
-
-        // Seller cannot be deleted
-        // while they still own houses.
         if (houseRepository
-                .existsBySellerSellerId(id)) {
+                .existsBySellerSellerId(
+                        seller.getSellerId()
+                )) {
 
             throw new IllegalArgumentException(
-                    "Seller cannot be deleted "
-                            + "because they still own houses: "
-                            + id
+                    "Seller cannot be deleted because they still own houses"
             );
         }
 
-        sellerRepository.deleteById(id);
+        sellerRepository.delete(seller);
+    }
+
+    private Seller getLoggedInSeller() {
+
+        Authentication authentication =
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
+
+        if (authentication == null
+                || !authentication.isAuthenticated()) {
+
+            throw new AccessDeniedException(
+                    "Seller is not authenticated"
+            );
+        }
+
+        String email =
+                authentication.getName();
+
+        return sellerRepository
+                .findByEmail(email)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Logged-in seller not found"
+                        )
+                );
     }
 
     private SellerResponse convertToResponse(

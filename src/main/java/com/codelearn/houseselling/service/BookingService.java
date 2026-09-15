@@ -6,10 +6,12 @@ import com.codelearn.houseselling.entity.Booking;
 import com.codelearn.houseselling.entity.BookingStatus;
 import com.codelearn.houseselling.entity.Customer;
 import com.codelearn.houseselling.entity.House;
+import com.codelearn.houseselling.entity.PaymentStatus;
 import com.codelearn.houseselling.entity.Seller;
 import com.codelearn.houseselling.repository.BookingRepository;
 import com.codelearn.houseselling.repository.CustomerRepository;
 import com.codelearn.houseselling.repository.HouseRepository;
+import com.codelearn.houseselling.repository.PaymentRepository;
 import com.codelearn.houseselling.repository.SaleRepository;
 import com.codelearn.houseselling.repository.SellerRepository;
 import org.springframework.security.access.AccessDeniedException;
@@ -22,33 +24,52 @@ import java.util.List;
 @Service
 public class BookingService {
 
+    private static final String SOLD_STATUS =
+            "SOLD";
+
     private final BookingRepository bookingRepository;
     private final CustomerRepository customerRepository;
     private final HouseRepository houseRepository;
     private final SaleRepository saleRepository;
     private final SellerRepository sellerRepository;
+    private final PaymentRepository paymentRepository;
 
     public BookingService(
             BookingRepository bookingRepository,
             CustomerRepository customerRepository,
             HouseRepository houseRepository,
             SaleRepository saleRepository,
-            SellerRepository sellerRepository) {
+            SellerRepository sellerRepository,
+            PaymentRepository paymentRepository) {
 
-        this.bookingRepository = bookingRepository;
-        this.customerRepository = customerRepository;
-        this.houseRepository = houseRepository;
-        this.saleRepository = saleRepository;
-        this.sellerRepository = sellerRepository;
+        this.bookingRepository =
+                bookingRepository;
+
+        this.customerRepository =
+                customerRepository;
+
+        this.houseRepository =
+                houseRepository;
+
+        this.saleRepository =
+                saleRepository;
+
+        this.sellerRepository =
+                sellerRepository;
+
+        this.paymentRepository =
+                paymentRepository;
     }
 
     public BookingResponse createBooking(
             BookingRequest request) {
 
-        Seller seller = getLoggedInSeller();
+        Seller seller =
+                getLoggedInSeller();
 
         Customer customer =
-                customerRepository.findById(
+                customerRepository
+                        .findById(
                                 request.getCustomerId()
                         )
                         .orElseThrow(() ->
@@ -59,7 +80,8 @@ public class BookingService {
                         );
 
         House house =
-                houseRepository.findById(
+                houseRepository
+                        .findById(
                                 request.getHouseId()
                         )
                         .orElseThrow(() ->
@@ -69,51 +91,57 @@ public class BookingService {
                                 )
                         );
 
-        // Seller can only create bookings
-        // for houses they own.
-        if (house.getSeller() == null
-                || !house.getSeller()
+        if (!house.getSeller()
                 .getSellerId()
-                .equals(seller.getSellerId())) {
+                .equals(
+                        seller.getSellerId()
+                )) {
 
             throw new AccessDeniedException(
                     "You cannot create a booking for another seller's house"
             );
         }
 
-        // Sold house cannot receive new bookings.
         if (saleRepository
                 .existsByHouseHouseIdAndStatus(
-                        request.getHouseId(),
-                        "SOLD"
+                        house.getHouseId(),
+                        SOLD_STATUS
                 )) {
 
             throw new IllegalArgumentException(
-                    "House is already sold and cannot be booked: "
-                            + request.getHouseId()
+                    "House has already been sold"
             );
         }
 
-        // Prevent multiple active bookings
-        // for same house and date.
-        if (isActiveStatus(request.getStatus())
-                && bookingRepository
-                .existsByHouseHouseIdAndBookingDateAndStatusIn(
-                        request.getHouseId(),
-                        request.getBookingDate(),
-                        List.of(
-                                BookingStatus.PENDING,
-                                BookingStatus.CONFIRMED
-                        )
-                )) {
+        List<BookingStatus> activeStatuses =
+                List.of(
+                        BookingStatus.PENDING,
+                        BookingStatus.CONFIRMED
+                );
 
-            throw new IllegalArgumentException(
-                    "House already has an active booking on this date: "
-                            + request.getBookingDate()
-            );
+        if (request.getStatus()
+                == BookingStatus.PENDING
+                || request.getStatus()
+                == BookingStatus.CONFIRMED) {
+
+            boolean duplicate =
+                    bookingRepository
+                            .existsByHouseHouseIdAndBookingDateAndStatusIn(
+                                    house.getHouseId(),
+                                    request.getBookingDate(),
+                                    activeStatuses
+                            );
+
+            if (duplicate) {
+
+                throw new IllegalArgumentException(
+                        "House already has an active booking on this date"
+                );
+            }
         }
 
-        Booking booking = new Booking();
+        Booking booking =
+                new Booking();
 
         booking.setBookingDate(
                 request.getBookingDate()
@@ -132,14 +160,20 @@ public class BookingService {
         );
 
         Booking savedBooking =
-                bookingRepository.save(booking);
+                bookingRepository.save(
+                        booking
+                );
 
-        return convertToResponse(savedBooking);
+        return convertToResponse(
+                savedBooking
+        );
     }
 
-    public List<BookingResponse> getAllBookings() {
+    public List<BookingResponse>
+    getAllBookings() {
 
-        Seller seller = getLoggedInSeller();
+        Seller seller =
+                getLoggedInSeller();
 
         return bookingRepository
                 .findByHouseSellerSellerId(
@@ -153,7 +187,8 @@ public class BookingService {
     public BookingResponse getBookingById(
             Long id) {
 
-        Seller seller = getLoggedInSeller();
+        Seller seller =
+                getLoggedInSeller();
 
         Booking booking =
                 bookingRepository
@@ -167,14 +202,17 @@ public class BookingService {
             return null;
         }
 
-        return convertToResponse(booking);
+        return convertToResponse(
+                booking
+        );
     }
 
     public BookingResponse updateBooking(
             Long id,
             BookingRequest request) {
 
-        Seller seller = getLoggedInSeller();
+        Seller seller =
+                getLoggedInSeller();
 
         Booking existingBooking =
                 bookingRepository
@@ -188,8 +226,30 @@ public class BookingService {
             return null;
         }
 
+        if (paymentRepository
+                .existsByBookingBookingIdAndStatus(
+                        id,
+                        PaymentStatus.PAID
+                )) {
+
+            throw new IllegalArgumentException(
+                    "Paid booking cannot be updated"
+            );
+        }
+
+        if (existingBooking.getStatus()
+                == BookingStatus.CANCELLED
+                && request.getStatus()
+                != BookingStatus.CANCELLED) {
+
+            throw new IllegalArgumentException(
+                    "Cancelled booking cannot be reopened"
+            );
+        }
+
         Customer customer =
-                customerRepository.findById(
+                customerRepository
+                        .findById(
                                 request.getCustomerId()
                         )
                         .orElseThrow(() ->
@@ -200,7 +260,8 @@ public class BookingService {
                         );
 
         House house =
-                houseRepository.findById(
+                houseRepository
+                        .findById(
                                 request.getHouseId()
                         )
                         .orElseThrow(() ->
@@ -210,46 +271,54 @@ public class BookingService {
                                 )
                         );
 
-        // Seller cannot move a booking
-        // to another seller's house.
-        if (house.getSeller() == null
-                || !house.getSeller()
+        if (!house.getSeller()
                 .getSellerId()
-                .equals(seller.getSellerId())) {
+                .equals(
+                        seller.getSellerId()
+                )) {
 
             throw new AccessDeniedException(
-                    "You cannot use another seller's house"
+                    "You cannot move a booking to another seller's house"
             );
         }
 
         if (saleRepository
                 .existsByHouseHouseIdAndStatus(
-                        request.getHouseId(),
-                        "SOLD"
+                        house.getHouseId(),
+                        SOLD_STATUS
                 )) {
 
             throw new IllegalArgumentException(
-                    "House is already sold and cannot be booked: "
-                            + request.getHouseId()
+                    "House has already been sold"
             );
         }
 
-        if (isActiveStatus(request.getStatus())
-                && bookingRepository
-                .existsByHouseHouseIdAndBookingDateAndStatusInAndBookingIdNot(
-                        request.getHouseId(),
-                        request.getBookingDate(),
-                        List.of(
-                                BookingStatus.PENDING,
-                                BookingStatus.CONFIRMED
-                        ),
-                        id
-                )) {
+        List<BookingStatus> activeStatuses =
+                List.of(
+                        BookingStatus.PENDING,
+                        BookingStatus.CONFIRMED
+                );
 
-            throw new IllegalArgumentException(
-                    "House already has an active booking on this date: "
-                            + request.getBookingDate()
-            );
+        if (request.getStatus()
+                == BookingStatus.PENDING
+                || request.getStatus()
+                == BookingStatus.CONFIRMED) {
+
+            boolean duplicate =
+                    bookingRepository
+                            .existsByHouseHouseIdAndBookingDateAndStatusInAndBookingIdNot(
+                                    house.getHouseId(),
+                                    request.getBookingDate(),
+                                    activeStatuses,
+                                    id
+                            );
+
+            if (duplicate) {
+
+                throw new IllegalArgumentException(
+                        "House already has another active booking on this date"
+                );
+            }
         }
 
         existingBooking.setBookingDate(
@@ -273,13 +342,119 @@ public class BookingService {
                         existingBooking
                 );
 
-        return convertToResponse(updatedBooking);
+        return convertToResponse(
+                updatedBooking
+        );
+    }
+
+    // =========================
+    // SELLER CONFIRMS BOOKING
+    // =========================
+
+    public BookingResponse confirmBooking(
+            Long id) {
+
+        Seller seller =
+                getLoggedInSeller();
+
+        Booking booking =
+                bookingRepository
+                        .findByBookingIdAndHouseSellerSellerId(
+                                id,
+                                seller.getSellerId()
+                        )
+                        .orElse(null);
+
+        if (booking == null) {
+            return null;
+        }
+
+        if (booking.getStatus()
+                == BookingStatus.CANCELLED) {
+
+            throw new IllegalArgumentException(
+                    "Cancelled booking cannot be confirmed"
+            );
+        }
+
+        if (saleRepository
+                .existsByHouseHouseIdAndStatus(
+                        booking.getHouse()
+                                .getHouseId(),
+                        SOLD_STATUS
+                )) {
+
+            throw new IllegalArgumentException(
+                    "House has already been sold"
+            );
+        }
+
+        booking.setStatus(
+                BookingStatus.CONFIRMED
+        );
+
+        Booking updatedBooking =
+                bookingRepository.save(
+                        booking
+                );
+
+        return convertToResponse(
+                updatedBooking
+        );
+    }
+
+    // =========================
+    // SELLER CANCELS BOOKING
+    // =========================
+
+    public BookingResponse cancelBooking(
+            Long id) {
+
+        Seller seller =
+                getLoggedInSeller();
+
+        Booking booking =
+                bookingRepository
+                        .findByBookingIdAndHouseSellerSellerId(
+                                id,
+                                seller.getSellerId()
+                        )
+                        .orElse(null);
+
+        if (booking == null) {
+            return null;
+        }
+
+        if (paymentRepository
+                .existsByBookingBookingIdAndStatus(
+                        id,
+                        PaymentStatus.PAID
+                )) {
+
+            throw new IllegalArgumentException(
+                    "Paid booking cannot be cancelled"
+            );
+        }
+
+        booking.setStatus(
+                BookingStatus.CANCELLED
+        );
+
+        Booking updatedBooking =
+                bookingRepository.save(
+                        booking
+                );
+
+        return convertToResponse(
+                updatedBooking
+        );
     }
 
     public boolean deleteBooking(
             Long id) {
 
-        Seller seller = getLoggedInSeller();
+        Seller seller =
+                getLoggedInSeller();
 
         Booking booking =
                 bookingRepository
@@ -293,7 +468,17 @@ public class BookingService {
             return false;
         }
 
-        bookingRepository.delete(booking);
+        if (paymentRepository
+                .existsByBookingBookingId(id)) {
+
+            throw new IllegalArgumentException(
+                    "Booking cannot be deleted because it has payments"
+            );
+        }
+
+        bookingRepository.delete(
+                booking
+        );
 
         return true;
     }
@@ -323,13 +508,6 @@ public class BookingService {
                                 "Logged-in seller not found"
                         )
                 );
-    }
-
-    private boolean isActiveStatus(
-            BookingStatus status) {
-
-        return status == BookingStatus.PENDING
-                || status == BookingStatus.CONFIRMED;
     }
 
     private BookingResponse convertToResponse(

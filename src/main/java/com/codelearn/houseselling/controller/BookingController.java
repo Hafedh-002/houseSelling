@@ -30,9 +30,8 @@ public class BookingController {
             BookingRequest request) {
 
         BookingResponse response =
-                bookingService.createBooking(
-                        request
-                );
+                bookingService
+                        .createBooking(request);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -44,7 +43,8 @@ public class BookingController {
     getAllBookings() {
 
         return ResponseEntity.ok(
-                bookingService.getAllBookings()
+                bookingService
+                        .getAllBookings()
         );
     }
 
@@ -64,7 +64,9 @@ public class BookingController {
                     .build();
         }
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(
+                response
+        );
     }
 
     @PutMapping("/{id}")
@@ -75,10 +77,11 @@ public class BookingController {
             BookingRequest request) {
 
         BookingResponse response =
-                bookingService.updateBooking(
-                        id,
-                        request
-                );
+                bookingService
+                        .updateBooking(
+                                id,
+                                request
+                        );
 
         if (response == null) {
 
@@ -87,7 +90,53 @@ public class BookingController {
                     .build();
         }
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(
+                response
+        );
+    }
+
+    // SELLER CONFIRM
+    @PutMapping("/{id}/confirm")
+    public ResponseEntity<BookingResponse>
+    confirmBooking(
+            @PathVariable Long id) {
+
+        BookingResponse response =
+                bookingService
+                        .confirmBooking(id);
+
+        if (response == null) {
+
+            return ResponseEntity
+                    .notFound()
+                    .build();
+        }
+
+        return ResponseEntity.ok(
+                response
+        );
+    }
+
+    // SELLER CANCEL
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<BookingResponse>
+    cancelBooking(
+            @PathVariable Long id) {
+
+        BookingResponse response =
+                bookingService
+                        .cancelBooking(id);
+
+        if (response == null) {
+
+            return ResponseEntity
+                    .notFound()
+                    .build();
+        }
+
+        return ResponseEntity.ok(
+                response
+        );
     }
 
     @DeleteMapping("/{id}")
@@ -96,7 +145,8 @@ public class BookingController {
             @PathVariable Long id) {
 
         boolean deleted =
-                bookingService.deleteBooking(id);
+                bookingService
+                        .deleteBooking(id);
 
         if (!deleted) {
 

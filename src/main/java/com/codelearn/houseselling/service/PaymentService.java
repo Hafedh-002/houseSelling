@@ -29,19 +29,27 @@ public class PaymentService {
             BookingRepository bookingRepository,
             SellerRepository sellerRepository) {
 
-        this.paymentRepository = paymentRepository;
-        this.bookingRepository = bookingRepository;
-        this.sellerRepository = sellerRepository;
+        this.paymentRepository =
+                paymentRepository;
+
+        this.bookingRepository =
+                bookingRepository;
+
+        this.sellerRepository =
+                sellerRepository;
     }
 
     public PaymentResponse createPayment(
             PaymentRequest request) {
 
-        Seller seller = getLoggedInSeller();
+        Seller seller =
+                getLoggedInSeller();
 
         Booking booking =
                 bookingRepository
-                        .findById(request.getBookingId())
+                        .findById(
+                                request.getBookingId()
+                        )
                         .orElseThrow(() ->
                                 new IllegalArgumentException(
                                         "Booking not found with id: "
@@ -49,44 +57,41 @@ public class PaymentService {
                                 )
                         );
 
-        // Seller can only create payment
-        // for a booking belonging to their house.
-        if (booking.getHouse() == null
-                || booking.getHouse().getSeller() == null
-                || !booking.getHouse()
+        if (!booking.getHouse()
                 .getSeller()
                 .getSellerId()
-                .equals(seller.getSellerId())) {
+                .equals(
+                        seller.getSellerId()
+                )) {
 
             throw new AccessDeniedException(
                     "You cannot create a payment for another seller's booking"
             );
         }
 
-        // Cancelled booking cannot receive payment.
-        if (booking.getStatus() == BookingStatus.CANCELLED) {
+        if (booking.getStatus()
+                != BookingStatus.CONFIRMED) {
 
             throw new IllegalArgumentException(
-                    "Payment cannot be made for a cancelled booking: "
-                            + request.getBookingId()
+                    "Payment can only be recorded for a CONFIRMED booking"
             );
         }
 
-        // Booking cannot have more than one PAID payment.
-        if (request.getStatus() == PaymentStatus.PAID
+        if (request.getStatus()
+                == PaymentStatus.PAID
                 && paymentRepository
                 .existsByBookingBookingIdAndStatus(
-                        request.getBookingId(),
+                        booking.getBookingId(),
                         PaymentStatus.PAID
                 )) {
 
             throw new IllegalArgumentException(
-                    "Booking already has a paid payment: "
-                            + request.getBookingId()
+                    "This booking already has a PAID payment"
             );
         }
 
-        Payment payment = new Payment();
+        Payment payment =
+                new Payment();
 
         payment.setAmount(
                 request.getAmount()
@@ -109,14 +114,20 @@ public class PaymentService {
         );
 
         Payment savedPayment =
-                paymentRepository.save(payment);
+                paymentRepository.save(
+                        payment
+                );
 
-        return convertToResponse(savedPayment);
+        return convertToResponse(
+                savedPayment
+        );
     }
 
-    public List<PaymentResponse> getAllPayments() {
+    public List<PaymentResponse>
+    getAllPayments() {
 
-        Seller seller = getLoggedInSeller();
+        Seller seller =
+                getLoggedInSeller();
 
         return paymentRepository
                 .findByBookingHouseSellerSellerId(
@@ -130,7 +141,8 @@ public class PaymentService {
     public PaymentResponse getPaymentById(
             Long id) {
 
-        Seller seller = getLoggedInSeller();
+        Seller seller =
+                getLoggedInSeller();
 
         Payment payment =
                 paymentRepository
@@ -144,14 +156,17 @@ public class PaymentService {
             return null;
         }
 
-        return convertToResponse(payment);
+        return convertToResponse(
+                payment
+        );
     }
 
     public PaymentResponse updatePayment(
             Long id,
             PaymentRequest request) {
 
-        Seller seller = getLoggedInSeller();
+        Seller seller =
+                getLoggedInSeller();
 
         Payment existingPayment =
                 paymentRepository
@@ -165,9 +180,19 @@ public class PaymentService {
             return null;
         }
 
+        if (existingPayment.getStatus()
+                == PaymentStatus.PAID) {
+
+            throw new IllegalArgumentException(
+                    "PAID payment cannot be modified"
+            );
+        }
+
         Booking booking =
                 bookingRepository
-                        .findById(request.getBookingId())
+                        .findById(
+                                request.getBookingId()
+                        )
                         .orElseThrow(() ->
                                 new IllegalArgumentException(
                                         "Booking not found with id: "
@@ -175,40 +200,37 @@ public class PaymentService {
                                 )
                         );
 
-        // Seller cannot move a payment
-        // to another seller's booking.
-        if (booking.getHouse() == null
-                || booking.getHouse().getSeller() == null
-                || !booking.getHouse()
+        if (!booking.getHouse()
                 .getSeller()
                 .getSellerId()
-                .equals(seller.getSellerId())) {
+                .equals(
+                        seller.getSellerId()
+                )) {
 
             throw new AccessDeniedException(
                     "You cannot use another seller's booking"
             );
         }
 
-        if (booking.getStatus() == BookingStatus.CANCELLED) {
+        if (booking.getStatus()
+                != BookingStatus.CONFIRMED) {
 
             throw new IllegalArgumentException(
-                    "Payment cannot be made for a cancelled booking: "
-                            + request.getBookingId()
+                    "Payment can only be recorded for a CONFIRMED booking"
             );
         }
 
-        // Ignore the payment currently being updated.
-        if (request.getStatus() == PaymentStatus.PAID
+        if (request.getStatus()
+                == PaymentStatus.PAID
                 && paymentRepository
                 .existsByBookingBookingIdAndStatusAndPaymentIdNot(
-                        request.getBookingId(),
+                        booking.getBookingId(),
                         PaymentStatus.PAID,
                         id
                 )) {
 
             throw new IllegalArgumentException(
-                    "Booking already has a paid payment: "
-                            + request.getBookingId()
+                    "This booking already has another PAID payment"
             );
         }
 
@@ -237,13 +259,16 @@ public class PaymentService {
                         existingPayment
                 );
 
-        return convertToResponse(updatedPayment);
+        return convertToResponse(
+                updatedPayment
+        );
     }
 
     public boolean deletePayment(
             Long id) {
 
-        Seller seller = getLoggedInSeller();
+        Seller seller =
+                getLoggedInSeller();
 
         Payment payment =
                 paymentRepository
@@ -257,7 +282,17 @@ public class PaymentService {
             return false;
         }
 
-        paymentRepository.delete(payment);
+        if (payment.getStatus()
+                == PaymentStatus.PAID) {
+
+            throw new IllegalArgumentException(
+                    "PAID payment cannot be deleted"
+            );
+        }
+
+        paymentRepository.delete(
+                payment
+        );
 
         return true;
     }
@@ -327,11 +362,15 @@ public class PaymentService {
                             .getBookingDate()
             );
 
-            response.setBookingStatus(
-                    payment.getBooking()
-                            .getStatus()
-                            .name()
-            );
+            if (payment.getBooking()
+                    .getStatus() != null) {
+
+                response.setBookingStatus(
+                        payment.getBooking()
+                                .getStatus()
+                                .name()
+                );
+            }
         }
 
         return response;

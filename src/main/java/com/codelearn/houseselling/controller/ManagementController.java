@@ -1,9 +1,19 @@
 package com.codelearn.houseselling.controller;
 
+import com.codelearn.houseselling.dto.BookingResponse;
+import com.codelearn.houseselling.dto.CustomerResponse;
+import com.codelearn.houseselling.dto.DocumentResponse;
+import com.codelearn.houseselling.dto.HouseResponse;
 import com.codelearn.houseselling.dto.ManagementRequest;
 import com.codelearn.houseselling.dto.ManagementResponse;
+import com.codelearn.houseselling.dto.PaymentResponse;
+import com.codelearn.houseselling.dto.SaleResponse;
+import com.codelearn.houseselling.dto.SellerResponse;
+
 import com.codelearn.houseselling.service.ManagementService;
+
 import jakarta.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,16 +26,26 @@ public class ManagementController {
 
     private final ManagementService managementService;
 
-    public ManagementController(ManagementService managementService) {
-        this.managementService = managementService;
+    public ManagementController(
+            ManagementService managementService) {
+
+        this.managementService =
+                managementService;
     }
 
+    // =========================
+    // MANAGEMENT CRUD
+    // =========================
+
     @PostMapping
-    public ResponseEntity<ManagementResponse> createManagement(
-            @Valid @RequestBody ManagementRequest request) {
+    public ResponseEntity<ManagementResponse>
+    createManagement(
+            @Valid @RequestBody
+            ManagementRequest request) {
 
         ManagementResponse response =
-                managementService.createManagement(request);
+                managementService
+                        .createManagement(request);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -33,48 +53,174 @@ public class ManagementController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ManagementResponse>> getAllManagement() {
+    public ResponseEntity<List<ManagementResponse>>
+    getAllManagement() {
 
         return ResponseEntity.ok(
-                managementService.getAllManagement()
+                managementService
+                        .getAllManagement()
         );
     }
 
+    // =========================
+    // ADMIN: SELLERS
+    // =========================
+
+    @GetMapping("/sellers")
+    public ResponseEntity<List<SellerResponse>>
+    getAllSellers() {
+
+        return ResponseEntity.ok(
+                managementService
+                        .getAllSellers()
+        );
+    }
+
+    // =========================
+    // ADMIN: HOUSES
+    // =========================
+
+    @GetMapping("/houses")
+    public ResponseEntity<List<HouseResponse>>
+    getAllHouses() {
+
+        return ResponseEntity.ok(
+                managementService
+                        .getAllHouses()
+        );
+    }
+
+    // =========================
+    // ADMIN: BOOKINGS
+    // =========================
+
+    @GetMapping("/bookings")
+    public ResponseEntity<List<BookingResponse>>
+    getAllBookings() {
+
+        return ResponseEntity.ok(
+                managementService
+                        .getAllBookings()
+        );
+    }
+
+    // =========================
+    // ADMIN: PAYMENTS
+    // =========================
+
+    @GetMapping("/payments")
+    public ResponseEntity<List<PaymentResponse>>
+    getAllPayments() {
+
+        return ResponseEntity.ok(
+                managementService
+                        .getAllPayments()
+        );
+    }
+
+    // =========================
+    // ADMIN: SALES
+    // =========================
+
+    @GetMapping("/sales")
+    public ResponseEntity<List<SaleResponse>>
+    getAllSales() {
+
+        return ResponseEntity.ok(
+                managementService
+                        .getAllSales()
+        );
+    }
+
+    // =========================
+    // ADMIN: DOCUMENTS
+    // =========================
+
+    @GetMapping("/documents")
+    public ResponseEntity<List<DocumentResponse>>
+    getAllDocuments() {
+
+        return ResponseEntity.ok(
+                managementService
+                        .getAllDocuments()
+        );
+    }
+
+    // =========================
+    // ADMIN: CUSTOMERS
+    // =========================
+
+    @GetMapping("/customers")
+    public ResponseEntity<List<CustomerResponse>>
+    getAllCustomers() {
+
+        return ResponseEntity.ok(
+                managementService
+                        .getAllCustomers()
+        );
+    }
+
+    // =========================
+    // MANAGEMENT BY ID
+    // =========================
+
     @GetMapping("/{id}")
-    public ResponseEntity<ManagementResponse> getManagementById(
+    public ResponseEntity<ManagementResponse>
+    getManagementById(
             @PathVariable Long id) {
 
         ManagementResponse response =
-                managementService.getManagementById(id);
+                managementService
+                        .getManagementById(id);
 
         if (response == null) {
-            return ResponseEntity.notFound().build();
+
+            return ResponseEntity
+                    .notFound()
+                    .build();
         }
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(
+                response
+        );
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ManagementResponse> updateManagement(
+    public ResponseEntity<ManagementResponse>
+    updateManagement(
             @PathVariable Long id,
-            @Valid @RequestBody ManagementRequest request) {
+            @Valid @RequestBody
+            ManagementRequest request) {
 
         ManagementResponse response =
-                managementService.updateManagement(id, request);
+                managementService
+                        .updateManagement(
+                                id,
+                                request
+                        );
 
         if (response == null) {
-            return ResponseEntity.notFound().build();
+
+            return ResponseEntity
+                    .notFound()
+                    .build();
         }
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(
+                response
+        );
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteManagement(
+    public ResponseEntity<Void>
+    deleteManagement(
             @PathVariable Long id) {
 
-        managementService.deleteManagement(id);
+        managementService
+                .deleteManagement(id);
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity
+                .noContent()
+                .build();
     }
 }

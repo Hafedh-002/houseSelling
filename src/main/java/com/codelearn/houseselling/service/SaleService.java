@@ -2,12 +2,17 @@ package com.codelearn.houseselling.service;
 
 import com.codelearn.houseselling.dto.SaleRequest;
 import com.codelearn.houseselling.dto.SaleResponse;
+import com.codelearn.houseselling.entity.Booking;
+import com.codelearn.houseselling.entity.BookingStatus;
 import com.codelearn.houseselling.entity.Customer;
 import com.codelearn.houseselling.entity.House;
+import com.codelearn.houseselling.entity.PaymentStatus;
 import com.codelearn.houseselling.entity.Sale;
 import com.codelearn.houseselling.entity.Seller;
+import com.codelearn.houseselling.repository.BookingRepository;
 import com.codelearn.houseselling.repository.CustomerRepository;
 import com.codelearn.houseselling.repository.HouseRepository;
+import com.codelearn.houseselling.repository.PaymentRepository;
 import com.codelearn.houseselling.repository.SaleRepository;
 import com.codelearn.houseselling.repository.SellerRepository;
 import org.springframework.security.access.AccessDeniedException;
@@ -20,33 +25,54 @@ import java.util.List;
 @Service
 public class SaleService {
 
-    private static final String SOLD_STATUS = "SOLD";
+    private static final String SOLD_STATUS =
+            "SOLD";
 
     private final SaleRepository saleRepository;
     private final HouseRepository houseRepository;
     private final CustomerRepository customerRepository;
     private final SellerRepository sellerRepository;
+    private final BookingRepository bookingRepository;
+    private final PaymentRepository paymentRepository;
 
     public SaleService(
             SaleRepository saleRepository,
             HouseRepository houseRepository,
             CustomerRepository customerRepository,
-            SellerRepository sellerRepository) {
+            SellerRepository sellerRepository,
+            BookingRepository bookingRepository,
+            PaymentRepository paymentRepository) {
 
-        this.saleRepository = saleRepository;
-        this.houseRepository = houseRepository;
-        this.customerRepository = customerRepository;
-        this.sellerRepository = sellerRepository;
+        this.saleRepository =
+                saleRepository;
+
+        this.houseRepository =
+                houseRepository;
+
+        this.customerRepository =
+                customerRepository;
+
+        this.sellerRepository =
+                sellerRepository;
+
+        this.bookingRepository =
+                bookingRepository;
+
+        this.paymentRepository =
+                paymentRepository;
     }
 
     public SaleResponse createSale(
             SaleRequest request) {
 
-        Seller seller = getLoggedInSeller();
+        Seller seller =
+                getLoggedInSeller();
 
         House house =
                 houseRepository
-                        .findById(request.getHouseId())
+                        .findById(
+                                request.getHouseId()
+                        )
                         .orElseThrow(() ->
                                 new IllegalArgumentException(
                                         "House not found with id: "
@@ -54,12 +80,11 @@ public class SaleService {
                                 )
                         );
 
-        // Seller can only create sale
-        // for a house they own.
-        if (house.getSeller() == null
-                || !house.getSeller()
+        if (!house.getSeller()
                 .getSellerId()
-                .equals(seller.getSellerId())) {
+                .equals(
+                        seller.getSellerId()
+                )) {
 
             throw new AccessDeniedException(
                     "You cannot create a sale for another seller's house"
@@ -68,7 +93,9 @@ public class SaleService {
 
         Customer customer =
                 customerRepository
-                        .findById(request.getCustomerId())
+                        .findById(
+                                request.getCustomerId()
+                        )
                         .orElseThrow(() ->
                                 new IllegalArgumentException(
                                         "Customer not found with id: "
@@ -76,10 +103,9 @@ public class SaleService {
                                 )
                         );
 
-        // House cannot be sold more than once.
         if (saleRepository
                 .existsByHouseHouseIdAndStatus(
-                        request.getHouseId(),
+                        house.getHouseId(),
                         SOLD_STATUS
                 )) {
 
@@ -88,7 +114,14 @@ public class SaleService {
             );
         }
 
-        Sale sale = new Sale();
+        Booking paidConfirmedBooking =
+                findPaidConfirmedBooking(
+                        customer.getCustomerId(),
+                        house.getHouseId()
+                );
+
+        Sale sale =
+                new Sale();
 
         sale.setSalePrice(
                 request.getSalePrice()
@@ -99,7 +132,7 @@ public class SaleService {
         );
 
         sale.setStatus(
-                request.getStatus()
+                SOLD_STATUS
         );
 
         sale.setHouse(
@@ -111,14 +144,25 @@ public class SaleService {
         );
 
         Sale savedSale =
-                saleRepository.save(sale);
+                saleRepository.save(
+                        sale
+                );
 
-        return convertToResponse(savedSale);
+        cancelOtherBookings(
+                house.getHouseId(),
+                paidConfirmedBooking.getBookingId()
+        );
+
+        return convertToResponse(
+                savedSale
+        );
     }
 
-    public List<SaleResponse> getAllSales() {
+    public List<SaleResponse>
+    getAllSales() {
 
-        Seller seller = getLoggedInSeller();
+        Seller seller =
+                getLoggedInSeller();
 
         return saleRepository
                 .findByHouseSellerSellerId(
@@ -132,7 +176,8 @@ public class SaleService {
     public SaleResponse getSaleById(
             Long id) {
 
-        Seller seller = getLoggedInSeller();
+        Seller seller =
+                getLoggedInSeller();
 
         Sale sale =
                 saleRepository
@@ -146,14 +191,17 @@ public class SaleService {
             return null;
         }
 
-        return convertToResponse(sale);
+        return convertToResponse(
+                sale
+        );
     }
 
     public SaleResponse updateSale(
             Long id,
             SaleRequest request) {
 
-        Seller seller = getLoggedInSeller();
+        Seller seller =
+                getLoggedInSeller();
 
         Sale existingSale =
                 saleRepository
@@ -167,9 +215,19 @@ public class SaleService {
             return null;
         }
 
+        if (SOLD_STATUS.equalsIgnoreCase(
+                existingSale.getStatus())) {
+
+            throw new IllegalArgumentException(
+                    "Completed SOLD sale cannot be modified"
+            );
+        }
+
         House house =
                 houseRepository
-                        .findById(request.getHouseId())
+                        .findById(
+                                request.getHouseId()
+                        )
                         .orElseThrow(() ->
                                 new IllegalArgumentException(
                                         "House not found with id: "
@@ -177,12 +235,11 @@ public class SaleService {
                                 )
                         );
 
-        // Seller cannot move sale
-        // to another seller's house.
-        if (house.getSeller() == null
-                || !house.getSeller()
+        if (!house.getSeller()
                 .getSellerId()
-                .equals(seller.getSellerId())) {
+                .equals(
+                        seller.getSellerId()
+                )) {
 
             throw new AccessDeniedException(
                     "You cannot use another seller's house"
@@ -191,7 +248,9 @@ public class SaleService {
 
         Customer customer =
                 customerRepository
-                        .findById(request.getCustomerId())
+                        .findById(
+                                request.getCustomerId()
+                        )
                         .orElseThrow(() ->
                                 new IllegalArgumentException(
                                         "Customer not found with id: "
@@ -199,19 +258,10 @@ public class SaleService {
                                 )
                         );
 
-        // Ignore current sale when checking
-        // whether house is already sold.
-        if (saleRepository
-                .existsByHouseHouseIdAndStatusAndSaleIdNot(
-                        request.getHouseId(),
-                        SOLD_STATUS,
-                        id
-                )) {
-
-            throw new IllegalArgumentException(
-                    "House has already been sold"
-            );
-        }
+        findPaidConfirmedBooking(
+                customer.getCustomerId(),
+                house.getHouseId()
+        );
 
         existingSale.setSalePrice(
                 request.getSalePrice()
@@ -222,7 +272,7 @@ public class SaleService {
         );
 
         existingSale.setStatus(
-                request.getStatus()
+                SOLD_STATUS
         );
 
         existingSale.setHouse(
@@ -238,13 +288,16 @@ public class SaleService {
                         existingSale
                 );
 
-        return convertToResponse(updatedSale);
+        return convertToResponse(
+                updatedSale
+        );
     }
 
     public boolean deleteSale(
             Long id) {
 
-        Seller seller = getLoggedInSeller();
+        Seller seller =
+                getLoggedInSeller();
 
         Sale sale =
                 saleRepository
@@ -258,9 +311,98 @@ public class SaleService {
             return false;
         }
 
-        saleRepository.delete(sale);
+        if (SOLD_STATUS.equalsIgnoreCase(
+                sale.getStatus())) {
+
+            throw new IllegalArgumentException(
+                    "Completed SOLD sale cannot be deleted"
+            );
+        }
+
+        saleRepository.delete(
+                sale
+        );
 
         return true;
+    }
+
+    // =========================
+    // FIND CONFIRMED + PAID BOOKING
+    // =========================
+
+    private Booking findPaidConfirmedBooking(
+            Long customerId,
+            Long houseId) {
+
+        List<Booking> confirmedBookings =
+                bookingRepository
+                        .findByCustomerCustomerIdAndHouseHouseIdAndStatus(
+                                customerId,
+                                houseId,
+                                BookingStatus.CONFIRMED
+                        );
+
+        for (Booking booking :
+                confirmedBookings) {
+
+            boolean paid =
+                    paymentRepository
+                            .existsByBookingBookingIdAndStatus(
+                                    booking.getBookingId(),
+                                    PaymentStatus.PAID
+                            );
+
+            if (paid) {
+                return booking;
+            }
+        }
+
+        throw new IllegalArgumentException(
+                "Sale cannot be completed. "
+                        + "Customer must have a CONFIRMED booking "
+                        + "with a PAID payment for this house"
+        );
+    }
+
+    // =========================
+    // CANCEL OTHER BOOKINGS
+    // AFTER HOUSE IS SOLD
+    // =========================
+
+    private void cancelOtherBookings(
+            Long houseId,
+            Long successfulBookingId) {
+
+        List<BookingStatus> activeStatuses =
+                List.of(
+                        BookingStatus.PENDING,
+                        BookingStatus.CONFIRMED
+                );
+
+        List<Booking> bookings =
+                bookingRepository
+                        .findByHouseHouseIdAndStatusIn(
+                                houseId,
+                                activeStatuses
+                        );
+
+        for (Booking booking :
+                bookings) {
+
+            if (!booking.getBookingId()
+                    .equals(
+                            successfulBookingId
+                    )) {
+
+                booking.setStatus(
+                        BookingStatus.CANCELLED
+                );
+            }
+        }
+
+        bookingRepository.saveAll(
+                bookings
+        );
     }
 
     private Seller getLoggedInSeller() {

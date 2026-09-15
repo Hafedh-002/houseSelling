@@ -5,7 +5,9 @@ import com.codelearn.houseselling.dto.HouseResponse;
 import com.codelearn.houseselling.entity.House;
 import com.codelearn.houseselling.entity.Seller;
 import com.codelearn.houseselling.repository.HouseRepository;
+import com.codelearn.houseselling.repository.SaleRepository;
 import com.codelearn.houseselling.repository.SellerRepository;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -15,43 +17,80 @@ import java.util.List;
 @Service
 public class HouseService {
 
+    private static final String SOLD_STATUS =
+            "SOLD";
+
     private final HouseRepository houseRepository;
     private final SellerRepository sellerRepository;
+    private final SaleRepository saleRepository;
 
     public HouseService(
             HouseRepository houseRepository,
-            SellerRepository sellerRepository) {
+            SellerRepository sellerRepository,
+            SaleRepository saleRepository) {
 
-        this.houseRepository = houseRepository;
-        this.sellerRepository = sellerRepository;
+        this.houseRepository =
+                houseRepository;
+
+        this.sellerRepository =
+                sellerRepository;
+
+        this.saleRepository =
+                saleRepository;
     }
 
     public HouseResponse createHouse(
             HouseRequest request) {
 
-        Seller seller = getLoggedInSeller();
+        Seller seller =
+                getLoggedInSeller();
 
-        House house = new House();
+        House house =
+                new House();
 
-        house.setTitle(request.getTitle());
-        house.setLocation(request.getLocation());
-        house.setDescription(request.getDescription());
-        house.setPrice(request.getPrice());
-        house.setBedrooms(request.getBedrooms());
-        house.setBathrooms(request.getBathrooms());
+        house.setTitle(
+                request.getTitle()
+        );
 
-        // Logged-in seller automatically becomes owner.
-        house.setSeller(seller);
+        house.setLocation(
+                request.getLocation()
+        );
+
+        house.setDescription(
+                request.getDescription()
+        );
+
+        house.setPrice(
+                request.getPrice()
+        );
+
+        house.setBedrooms(
+                request.getBedrooms()
+        );
+
+        house.setBathrooms(
+                request.getBathrooms()
+        );
+
+        house.setSeller(
+                seller
+        );
 
         House savedHouse =
-                houseRepository.save(house);
+                houseRepository.save(
+                        house
+                );
 
-        return convertToResponse(savedHouse);
+        return convertToResponse(
+                savedHouse
+        );
     }
 
-    public List<HouseResponse> getAllHouses() {
+    public List<HouseResponse>
+    getAllHouses() {
 
-        Seller seller = getLoggedInSeller();
+        Seller seller =
+                getLoggedInSeller();
 
         return houseRepository
                 .findBySellerSellerId(
@@ -62,9 +101,11 @@ public class HouseService {
                 .toList();
     }
 
-    public HouseResponse getHouseById(Long id) {
+    public HouseResponse getHouseById(
+            Long id) {
 
-        Seller seller = getLoggedInSeller();
+        Seller seller =
+                getLoggedInSeller();
 
         House house =
                 houseRepository
@@ -78,16 +119,19 @@ public class HouseService {
             return null;
         }
 
-        return convertToResponse(house);
+        return convertToResponse(
+                house
+        );
     }
 
     public HouseResponse updateHouse(
             Long id,
             HouseRequest request) {
 
-        Seller seller = getLoggedInSeller();
+        Seller seller =
+                getLoggedInSeller();
 
-        House existingHouse =
+        House house =
                 houseRepository
                         .findByHouseIdAndSellerSellerId(
                                 id,
@@ -95,48 +139,60 @@ public class HouseService {
                         )
                         .orElse(null);
 
-        if (existingHouse == null) {
+        if (house == null) {
             return null;
         }
 
-        existingHouse.setTitle(
+        if (saleRepository
+                .existsByHouseHouseIdAndStatus(
+                        id,
+                        SOLD_STATUS
+                )) {
+
+            throw new IllegalArgumentException(
+                    "SOLD house cannot be updated"
+            );
+        }
+
+        house.setTitle(
                 request.getTitle()
         );
 
-        existingHouse.setLocation(
+        house.setLocation(
                 request.getLocation()
         );
 
-        existingHouse.setDescription(
+        house.setDescription(
                 request.getDescription()
         );
 
-        existingHouse.setPrice(
+        house.setPrice(
                 request.getPrice()
         );
 
-        existingHouse.setBedrooms(
+        house.setBedrooms(
                 request.getBedrooms()
         );
 
-        existingHouse.setBathrooms(
+        house.setBathrooms(
                 request.getBathrooms()
         );
 
-        // Seller does not change during update.
-        existingHouse.setSeller(seller);
-
         House updatedHouse =
                 houseRepository.save(
-                        existingHouse
+                        house
                 );
 
-        return convertToResponse(updatedHouse);
+        return convertToResponse(
+                updatedHouse
+        );
     }
 
-    public boolean deleteHouse(Long id) {
+    public boolean deleteHouse(
+            Long id) {
 
-        Seller seller = getLoggedInSeller();
+        Seller seller =
+                getLoggedInSeller();
 
         House house =
                 houseRepository
@@ -150,7 +206,20 @@ public class HouseService {
             return false;
         }
 
-        houseRepository.delete(house);
+        if (saleRepository
+                .existsByHouseHouseIdAndStatus(
+                        id,
+                        SOLD_STATUS
+                )) {
+
+            throw new IllegalArgumentException(
+                    "SOLD house cannot be deleted"
+            );
+        }
+
+        houseRepository.delete(
+                house
+        );
 
         return true;
     }
@@ -165,7 +234,7 @@ public class HouseService {
         if (authentication == null
                 || !authentication.isAuthenticated()) {
 
-            throw new IllegalArgumentException(
+            throw new AccessDeniedException(
                     "Seller is not authenticated"
             );
         }

@@ -20,6 +20,7 @@ public interface DocumentRepository
             Long documentId
     );
 
+    // SELLER
     List<Document> findByHouseSellerSellerId(
             Long sellerId
     );
@@ -27,5 +28,10 @@ public interface DocumentRepository
     Optional<Document> findByDocumentIdAndHouseSellerSellerId(
             Long documentId,
             Long sellerId
+    );
+
+    // CUSTOMER
+    List<Document> findByHouseHouseIdIn(
+            List<Long> houseIds
     );
 }

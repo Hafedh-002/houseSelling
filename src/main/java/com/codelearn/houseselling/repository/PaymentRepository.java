@@ -21,6 +21,11 @@ public interface PaymentRepository
             Long paymentId
     );
 
+    boolean existsByBookingBookingId(
+            Long bookingId
+    );
+
+    // SELLER
     List<Payment> findByBookingHouseSellerSellerId(
             Long sellerId
     );
@@ -28,5 +33,10 @@ public interface PaymentRepository
     Optional<Payment> findByPaymentIdAndBookingHouseSellerSellerId(
             Long paymentId,
             Long sellerId
+    );
+
+    // CUSTOMER
+    List<Payment> findByBookingCustomerCustomerId(
+            Long customerId
     );
 }

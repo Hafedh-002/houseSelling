@@ -28,6 +28,10 @@ public interface BookingRepository
             Long customerId
     );
 
+    // =========================
+    // SELLER
+    // =========================
+
     List<Booking> findByHouseSellerSellerId(
             Long sellerId
     );
@@ -45,5 +49,33 @@ public interface BookingRepository
     boolean existsByCustomerCustomerIdAndHouseSellerSellerIdNot(
             Long customerId,
             Long sellerId
+    );
+
+    // =========================
+    // CUSTOMER
+    // =========================
+
+    List<Booking> findByCustomerCustomerId(
+            Long customerId
+    );
+
+    Optional<Booking> findByBookingIdAndCustomerCustomerId(
+            Long bookingId,
+            Long customerId
+    );
+
+    // =========================
+    // SALE WORKFLOW
+    // =========================
+
+    List<Booking> findByCustomerCustomerIdAndHouseHouseIdAndStatus(
+            Long customerId,
+            Long houseId,
+            BookingStatus status
+    );
+
+    List<Booking> findByHouseHouseIdAndStatusIn(
+            Long houseId,
+            List<BookingStatus> statuses
     );
 }

@@ -16,8 +16,7 @@ public class SecurityConfig {
             jwtAuthenticationFilter;
 
     public SecurityConfig(
-            JwtAuthenticationFilter
-                    jwtAuthenticationFilter) {
+            JwtAuthenticationFilter jwtAuthenticationFilter) {
 
         this.jwtAuthenticationFilter =
                 jwtAuthenticationFilter;
@@ -50,26 +49,49 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth ->
                         auth
 
-                                // Login endpoints
+                                // =========================
+                                // PUBLIC LOGIN
+                                // =========================
+
                                 .requestMatchers(
                                         "/api/auth/**"
                                 )
                                 .permitAll()
 
-                                // Seller registration
+                                // =========================
+                                // PUBLIC SELLER REGISTER
+                                // =========================
+
                                 .requestMatchers(
                                         HttpMethod.POST,
                                         "/api/sellers"
                                 )
                                 .permitAll()
 
-                                // Management/Admin only
+                                // =========================
+                                // ADMIN ONLY
+                                // =========================
+
                                 .requestMatchers(
                                         "/api/management/**"
                                 )
                                 .hasRole("ADMIN")
 
-                                // Seller endpoints
+                                // =========================
+                                // CUSTOMER ONLY
+                                // singular /customer
+                                // =========================
+
+                                .requestMatchers(
+                                        "/api/customer/**"
+                                )
+                                .hasRole("CUSTOMER")
+
+                                // =========================
+                                // SELLER ONLY
+                                // plural /customers
+                                // =========================
+
                                 .requestMatchers(
                                         "/api/houses/**",
                                         "/api/bookings/**",

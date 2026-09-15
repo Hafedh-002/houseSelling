@@ -24,6 +24,7 @@ public interface SaleRepository
             Long customerId
     );
 
+    // SELLER
     List<Sale> findByHouseSellerSellerId(
             Long sellerId
     );
@@ -41,5 +42,15 @@ public interface SaleRepository
     boolean existsByCustomerCustomerIdAndHouseSellerSellerIdNot(
             Long customerId,
             Long sellerId
+    );
+
+    // CUSTOMER
+    List<Sale> findByCustomerCustomerId(
+            Long customerId
+    );
+
+    List<Sale> findByCustomerCustomerIdAndStatus(
+            Long customerId,
+            String status
     );
 }

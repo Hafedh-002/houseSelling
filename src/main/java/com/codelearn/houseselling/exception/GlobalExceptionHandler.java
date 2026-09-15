@@ -7,6 +7,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
@@ -14,9 +15,9 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    // 400 - Business validation errors
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse>
-    handleIllegalArgumentException(
+    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
             IllegalArgumentException exception) {
 
         ErrorResponse errorResponse =
@@ -31,9 +32,9 @@ public class GlobalExceptionHandler {
                 .body(errorResponse);
     }
 
+    // 403 - User authenticated but not allowed
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorResponse>
-    handleAccessDeniedException(
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(
             AccessDeniedException exception) {
 
         ErrorResponse errorResponse =
@@ -48,9 +49,26 @@ public class GlobalExceptionHandler {
                 .body(errorResponse);
     }
 
+    // 404 - Route/resource does not exist
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResourceFoundException(
+            NoResourceFoundException exception) {
+
+        ErrorResponse errorResponse =
+                new ErrorResponse(
+                        HttpStatus.NOT_FOUND.value(),
+                        "Resource not found",
+                        LocalDateTime.now()
+                );
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(errorResponse);
+    }
+
+    // 400 - DTO validation
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse>
-    handleValidationException(
+    public ResponseEntity<ErrorResponse> handleValidationException(
             MethodArgumentNotValidException exception) {
 
         String message =
@@ -78,9 +96,9 @@ public class GlobalExceptionHandler {
                 .body(errorResponse);
     }
 
+    // 400 - Invalid JSON / invalid enum
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse>
-    handleMessageNotReadableException(
+    public ResponseEntity<ErrorResponse> handleMessageNotReadableException(
             HttpMessageNotReadableException exception) {
 
         String message =
@@ -119,9 +137,9 @@ public class GlobalExceptionHandler {
                 .body(errorResponse);
     }
 
+    // 500 - Real unexpected server errors
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse>
-    handleGeneralException(
+    public ResponseEntity<ErrorResponse> handleGeneralException(
             Exception exception) {
 
         ErrorResponse errorResponse =
@@ -132,7 +150,9 @@ public class GlobalExceptionHandler {
                 );
 
         return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .status(
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                )
                 .body(errorResponse);
     }
 }
