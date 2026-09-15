@@ -7,8 +7,13 @@ import com.codelearn.houseselling.repository.ManagementRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+
 @Service
 public class ManagementAuthService {
+
+    private static final int MAX_FAILED_ATTEMPTS = 3;
+    private static final long LOCK_DURATION_MINUTES = 15;
 
     private final ManagementRepository managementRepository;
     private final PasswordEncoder passwordEncoder;
@@ -43,14 +48,24 @@ public class ManagementAuthService {
                                 )
                         );
 
+        checkAccountLock(management);
+
+        if (management.getPassword() == null
+                || management.getPassword().isBlank()) {
+
+            throw new IllegalArgumentException(
+                    "Management account does not have a password"
+            );
+        }
+
         if (!passwordEncoder.matches(
                 request.getPassword(),
                 management.getPassword())) {
 
-            throw new IllegalArgumentException(
-                    "Invalid email or password"
-            );
+            registerFailedAttempt(management);
         }
+
+        resetFailedAttempts(management);
 
         String role =
                 management
@@ -72,5 +87,91 @@ public class ManagementAuthService {
                 "Bearer",
                 "Management login successful"
         );
+    }
+
+    private void checkAccountLock(
+            Management management) {
+
+        LocalDateTime lockedUntil =
+                management.getAccountLockedUntil();
+
+        if (lockedUntil == null) {
+            return;
+        }
+
+        LocalDateTime now =
+                LocalDateTime.now();
+
+        if (lockedUntil.isAfter(now)) {
+
+            throw new IllegalArgumentException(
+                    "Account is temporarily locked. Please try again later."
+            );
+        }
+
+        management.setFailedLoginAttempts(0);
+        management.setAccountLockedUntil(null);
+
+        managementRepository.save(management);
+    }
+
+    private void registerFailedAttempt(
+            Management management) {
+
+        int currentAttempts =
+                management.getFailedLoginAttempts() == null
+                        ? 0
+                        : management.getFailedLoginAttempts();
+
+        int newAttempts =
+                currentAttempts + 1;
+
+        management.setFailedLoginAttempts(
+                newAttempts
+        );
+
+        if (newAttempts >= MAX_FAILED_ATTEMPTS) {
+
+            management.setAccountLockedUntil(
+                    LocalDateTime.now()
+                            .plusMinutes(
+                                    LOCK_DURATION_MINUTES
+                            )
+            );
+
+            managementRepository.save(
+                    management
+            );
+
+            throw new IllegalArgumentException(
+                    "Too many failed login attempts. Account locked for 15 minutes."
+            );
+        }
+
+        managementRepository.save(
+                management
+        );
+
+        throw new IllegalArgumentException(
+                "Invalid email or password"
+        );
+    }
+
+    private void resetFailedAttempts(
+            Management management) {
+
+        Integer attempts =
+                management.getFailedLoginAttempts();
+
+        if ((attempts != null && attempts > 0)
+                || management.getAccountLockedUntil() != null) {
+
+            management.setFailedLoginAttempts(0);
+            management.setAccountLockedUntil(null);
+
+            managementRepository.save(
+                    management
+            );
+        }
     }
 }

@@ -9,8 +9,13 @@ import com.codelearn.houseselling.repository.CustomerRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+
 @Service
 public class CustomerAuthService {
+
+    private static final int MAX_FAILED_ATTEMPTS = 3;
+    private static final long LOCK_DURATION_MINUTES = 15;
 
     private final CustomerRepository customerRepository;
     private final PasswordEncoder passwordEncoder;
@@ -42,7 +47,8 @@ public class CustomerAuthService {
             );
         }
 
-        Customer customer = new Customer();
+        Customer customer =
+                new Customer();
 
         customer.setName(
                 request.getName()
@@ -65,6 +71,9 @@ public class CustomerAuthService {
                         request.getPassword()
                 )
         );
+
+        customer.setFailedLoginAttempts(0);
+        customer.setAccountLockedUntil(null);
 
         Customer savedCustomer =
                 customerRepository.save(
@@ -94,6 +103,8 @@ public class CustomerAuthService {
                                 )
                         );
 
+        checkAccountLock(customer);
+
         if (customer.getPassword() == null
                 || customer.getPassword().isBlank()) {
 
@@ -106,10 +117,10 @@ public class CustomerAuthService {
                 request.getPassword(),
                 customer.getPassword())) {
 
-            throw new IllegalArgumentException(
-                    "Invalid email or password"
-            );
+            registerFailedAttempt(customer);
         }
+
+        resetFailedAttempts(customer);
 
         String token =
                 jwtService.generateToken(
@@ -126,6 +137,86 @@ public class CustomerAuthService {
                 "Bearer",
                 "Customer login successful"
         );
+    }
+
+    private void checkAccountLock(
+            Customer customer) {
+
+        LocalDateTime lockedUntil =
+                customer.getAccountLockedUntil();
+
+        if (lockedUntil == null) {
+            return;
+        }
+
+        LocalDateTime now =
+                LocalDateTime.now();
+
+        if (lockedUntil.isAfter(now)) {
+
+            throw new IllegalArgumentException(
+                    "Account is temporarily locked. Please try again later."
+            );
+        }
+
+        customer.setFailedLoginAttempts(0);
+        customer.setAccountLockedUntil(null);
+
+        customerRepository.save(customer);
+    }
+
+    private void registerFailedAttempt(
+            Customer customer) {
+
+        int currentAttempts =
+                customer.getFailedLoginAttempts() == null
+                        ? 0
+                        : customer.getFailedLoginAttempts();
+
+        int newAttempts =
+                currentAttempts + 1;
+
+        customer.setFailedLoginAttempts(
+                newAttempts
+        );
+
+        if (newAttempts >= MAX_FAILED_ATTEMPTS) {
+
+            customer.setAccountLockedUntil(
+                    LocalDateTime.now()
+                            .plusMinutes(
+                                    LOCK_DURATION_MINUTES
+                            )
+            );
+
+            customerRepository.save(customer);
+
+            throw new IllegalArgumentException(
+                    "Too many failed login attempts. Account locked for 15 minutes."
+            );
+        }
+
+        customerRepository.save(customer);
+
+        throw new IllegalArgumentException(
+                "Invalid email or password"
+        );
+    }
+
+    private void resetFailedAttempts(
+            Customer customer) {
+
+        Integer attempts =
+                customer.getFailedLoginAttempts();
+
+        if ((attempts != null && attempts > 0)
+                || customer.getAccountLockedUntil() != null) {
+
+            customer.setFailedLoginAttempts(0);
+            customer.setAccountLockedUntil(null);
+
+            customerRepository.save(customer);
+        }
     }
 
     private CustomerResponse convertToResponse(

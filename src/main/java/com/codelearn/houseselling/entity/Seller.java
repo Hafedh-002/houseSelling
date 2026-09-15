@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+import java.time.LocalDateTime;
+
 @Entity
 public class Seller {
 
@@ -29,11 +31,15 @@ public class Seller {
     private String nida;
 
     @NotBlank(message = "Password is required")
-    @Size(
-            min = 6,
-            message = "Password must be at least 6 characters"
-    )
+    @Size(min = 6, message = "Password must be at least 6 characters")
+    @Column(length = 255)
     private String password;
+
+    @Column(name = "failed_login_attempts")
+    private Integer failedLoginAttempts = 0;
+
+    @Column(name = "account_locked_until")
+    private LocalDateTime accountLockedUntil;
 
     public Long getSellerId() {
         return sellerId;
@@ -89,5 +95,21 @@ public class Seller {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public Integer getFailedLoginAttempts() {
+        return failedLoginAttempts;
+    }
+
+    public void setFailedLoginAttempts(Integer failedLoginAttempts) {
+        this.failedLoginAttempts = failedLoginAttempts;
+    }
+
+    public LocalDateTime getAccountLockedUntil() {
+        return accountLockedUntil;
+    }
+
+    public void setAccountLockedUntil(LocalDateTime accountLockedUntil) {
+        this.accountLockedUntil = accountLockedUntil;
     }
 }
